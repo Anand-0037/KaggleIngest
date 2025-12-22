@@ -148,3 +148,12 @@ frontend/playwright-report/
 **/.pytest_cache/
 **/.ruff_cache/
 **/.ipynb_checkpoints/
+
+# Internal Dev / Guidance
+**/DEPLOYMENT.md
+**/rules.md
+**/.personal.md
+**/.rules.md
+**/REFACTORING_SUMMARY.md
+backend/docs/TOON_SPEC.md
+**/llms.txt
