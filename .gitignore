@@ -29,6 +29,7 @@ README.md
 chrome-extension/
 digest.txt
 python-package/
+.github/
 
 # ---------------------
 # Python
@@ -135,10 +136,15 @@ kaggle.json
 *.rdb
 
 # ---------------------
-# Misc
+# KaggleIngest Specific Exclusions
 # ---------------------
-*.lock
-!package-lock.json
-!uv.lock
-.personal.md
-.rules.md
+backend/outputs/
+backend/*.log
+backend/dump.rdb
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.ipynb_checkpoints/
