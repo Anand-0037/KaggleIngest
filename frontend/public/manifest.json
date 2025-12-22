@@ -1,0 +1,17 @@
+{
+  "name": "KaggleIngest",
+  "short_name": "KaggleIngest",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#20BEFF",
+  "description": "Turn any Kaggle repository into a simple text digest for your LLM.",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

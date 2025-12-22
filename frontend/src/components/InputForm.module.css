@@ -1,0 +1,410 @@
+/* InputForm.module.css - Production-grade spacing and typography */
+
+/* 8px grid system */
+:root {
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-5: 40px;
+  --sp-6: 48px;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+}
+
+/* Hero Section */
+.heroSection {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.heroTitle {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  margin: 0 0 var(--sp-2) 0;
+  color: var(--color-text);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.heroSubtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--sp-5) 0;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Main Card */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: var(--sp-4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Form */
+.form {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Input Section */
+.inputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.input {
+  width: 100%;
+  padding: var(--sp-2);
+  font-size: var(--text-base);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background);
+  color: var(--color-text);
+  transition: all 0.2s;
+  font-family: inherit;
+  height: 48px;
+  /* Fixed height for consistency */
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(32, 121, 255, 0.1);
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.inputError {
+  border-color: var(--color-error);
+}
+
+.errorMessage {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  color: var(--color-error);
+  font-size: var(--text-xs);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Submit Button */
+.submitBtn {
+  padding: 0 var(--sp-4);
+  height: 48px;
+  /* Match input height */
+  font-size: var(--text-base);
+  font-weight: 600;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--color-primary-dark, #1a73e8);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Options Row */
+.optionsRow {
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  background: var(--color-background);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.optionLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+/* Select */
+.select {
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--text-base);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select:hover {
+  border-color: var(--color-primary);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(32, 121, 255, 0.1);
+}
+
+/* Number Input with Stepper */
+.numberWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.numberInput {
+  width: 70px;
+  padding: var(--sp-1) 8px;
+  font-size: var(--text-base);
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.numberInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(32, 121, 255, 0.1);
+}
+
+.stepperBtn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  user-select: none;
+}
+
+.stepperBtn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.stepperBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* File Upload */
+.fileUploadSection {
+  margin-bottom: var(--sp-3);
+}
+
+.fileToggle {
+  width: 100%;
+  padding: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fileToggle:hover {
+  background: var(--color-background);
+  border-color: var(--color-primary);
+}
+
+.fileInputWrapper {
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--color-background);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+/* History */
+.historySection {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--sp-3);
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--sp-2) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.examplePill {
+  display: inline-block;
+  padding: var(--sp-1) var(--sp-2);
+  margin: 0 var(--sp-1) var(--sp-1) 0;
+  font-size: var(--text-sm);
+  background: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.examplePill:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.gridContainer {
+  display: grid;
+  grid-template-columns: minmax(250px, 1.5fr) 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.featuresCard {
+  padding: 16px;
+  background: var(--color-background);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  height: fit-content;
+}
+
+@media (max-width: 768px) {
+  .gridContainer {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* ========================================
+   Mobile Responsive Styles
+   ======================================== */
+
+@media (max-width: 768px) {
+  .heroSection {
+    padding: var(--sp-2) var(--sp-2);
+  }
+
+  .heroTitle {
+    font-size: var(--text-2xl);
+  }
+
+  .heroSubtitle {
+    font-size: var(--text-base);
+    margin-bottom: var(--sp-3);
+  }
+
+  .card {
+    padding: var(--sp-3);
+    border-radius: 12px;
+  }
+
+  .optionsRow {
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-2);
+  }
+
+  .submitBtn {
+    width: 100%;
+    height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroSection {
+    padding: var(--sp-2) var(--sp-1);
+  }
+
+  .heroTitle {
+    font-size: var(--text-xl);
+  }
+
+  .heroSubtitle {
+    font-size: var(--text-sm);
+  }
+
+  .card {
+    padding: var(--sp-2);
+    border-radius: 8px;
+  }
+
+  .input {
+    height: 44px;
+    font-size: var(--text-sm);
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  .submitBtn {
+    height: 44px;
+    font-size: var(--text-sm);
+    padding: 0 var(--sp-2);
+  }
+
+  .numberInput {
+    width: 60px;
+  }
+
+  .examplePill {
+    font-size: var(--text-xs);
+    padding: 6px 10px;
+  }
+
+  .sectionTitle {
+    font-size: var(--text-xs);
+  }
+}

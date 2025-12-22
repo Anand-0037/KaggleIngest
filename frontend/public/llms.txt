@@ -1,0 +1,158 @@
+# KaggleIngest
+
+> **The Bridge Between Kaggle Data and LLMs.**
+
+KaggleIngest transforms complex Kaggle competitions, datasets, and notebooks into high-quality, token-optimized context for Large Language Models. It solves the "context window" problem by intelligently ranking content and stripping noise.
+
+## Core Capabilities
+
+-   **Smart Context Ranking**: Uses a custom scoring algorithm (`Log(Upvotes) * TimeDecay`) to prioritize high-quality, recent implementation patterns over stale kernels.
+-   **Async Scalability**: Built on a robust `Redis` + `arq` backend to handle massive datasets and concurrent ingestion jobs without timeout risks.
+-   **Multi-Format Output**:
+    -   **`.toon` (Recommended)**: Token Optimized Object Notation. A JSON-like format that uses minimal tokens to represent code cells, markdown, and metadata.
+    -   **`.txt`**: Plain text, human-readable summary.
+    -   **`.md`**: Markdown with syntax highlighting support.
+-   **Robust Ingestion**: Hardened parsers for legacy `nbformat` v3, multi-encoding CSVs (UTF-8/Latin-1/CP1252), and resilient error handling for malformed notebooks.
+
+---
+
+## API Reference
+
+Base URL: `http://localhost:8000` (or deployed URL)
+
+### 1. Submit Ingestion Job
+`POST /get-context`
+
+Initiates an asynchronous background job to fetch, parse, and rank content.
+
+**Payload:**
+```json
+{
+  "url": "https://www.kaggle.com/competitions/titanic",
+  "top_n": 20,             // Optional: Max notebooks to process (Default: 10)
+  "output_format": "toon", // Optional: 'txt', 'toon', 'md' (Default: 'txt')
+  "dry_run": false         // Optional: Fetch metadata only (Default: false)
+}
+```
+
+**Response:**
+```json
+{
+  "job_id": "35f21fae4ddb463b9ff383c33b3346ab",
+  "status": "queued",
+  "message": "Job submitted successfully. Poll /jobs/{job_id} for status."
+}
+```
+
+### 2. Poll Job Status
+`GET /jobs/{job_id}`
+
+Check the progress of a submitted job.
+
+**Response (Processing):**
+```json
+{ "job_id": "...", "status": "in_progress", "result": null }
+```
+
+**Response (Complete):**
+```json
+{
+  "job_id": "...",
+  "status": "complete",
+  "result": {
+    "metadata": {
+      "title": "Titanic - Machine Learning from Disaster",
+      "url": "https://www.kaggle.com/competitions/titanic"
+    },
+    "stats": {
+      "total_requested": 20,
+      "successful_downloads": 18,
+      "elapsed_time": 4.52
+    }
+  }
+}
+```
+
+### 3. Download Result
+`GET /jobs/{job_id}/download`
+
+Stream the final processed file.
+*Query Parameter:* `format` (optional) - Override the originally requested format (e.g., `?format=md`).
+
+---
+
+## Usage Examples
+
+### Python Client
+```python
+import requests
+import time
+
+BASE_URL = "http://localhost:8000"
+
+# 1. Submit Job
+payload = {"url": "https://www.kaggle.com/competitions/titanic", "output_format": "toon"}
+job = requests.post(f"{BASE_URL}/get-context", json=payload).json()
+job_id = job["job_id"]
+
+# 2. Poll until complete
+while True:
+    status = requests.get(f"{BASE_URL}/jobs/{job_id}").json()
+    if status["status"] in ["complete", "failed"]:
+        break
+    time.sleep(2)
+
+# 3. Download
+if status["status"] == "complete":
+    content = requests.get(f"{BASE_URL}/jobs/{job_id}/download").text
+    print(content)
+```
+
+### CLI (curl)
+```bash
+# Submit
+JOB_ID=$(curl -X POST http://localhost:8000/get-context \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://www.kaggle.com/competitions/titanic"}' | jq -r .job_id)
+
+# Download (After waiting)
+curl -OJO "http://localhost:8000/jobs/$JOB_ID/download?format=md"
+```
+
+---
+
+## LLM System Prompt for TOON Format
+
+Copy and paste the following system prompt snippet into your favorite LLM (ChatGPT, Claude, Gemini, etc.) to help the model better understand and interpret TOON format results:
+
+```
+You are analyzing Kaggle competition/dataset context provided in TOON (Token-Optimized Object Notation) format.
+
+TOON Format Structure:
+- `m:` = metadata (competition/dataset info: title, url, description)
+- `s:` = schema (dataset columns with names and dtypes)
+- `r:` = sample_rows (first 10 rows of each CSV file)
+- `n:` = notebooks (ranked by upvotes, containing code cells)
+- `c:` = code cell content
+- `d:` = markdown/documentation cell
+
+Interpretation Guidelines:
+1. The notebooks are ranked by community upvotes - higher-ranked notebooks typically contain better solutions
+2. Sample rows show the actual data format - use these to understand column types and value ranges
+3. Schema provides column names and inferred data types (integer, float, string, datetime)
+4. Code cells contain executable Python/R code from top Kaggle notebooks
+5. Look for common patterns across multiple notebooks (e.g., feature engineering, model choices)
+
+When analyzing this context:
+- Identify the problem type (classification, regression, etc.) from metadata
+- Note key features from schema and sample data
+- Extract proven techniques from top notebooks
+- Synthesize insights across multiple solutions
+- Flag any data quality issues visible in sample rows
+```
+
+---
+
+## Architecture
+
+The backend uses FastAPI with optional Redis for async job processing. When Redis is unavailable, jobs run synchronously for local development.

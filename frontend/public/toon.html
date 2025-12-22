@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOON Format - Token-Oriented Object Notation</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <style>
+    :root {
+      --color-bg: #1a1a2e;
+      --color-card: #252542;
+      --color-text: #e0e0e0;
+      --color-accent: #20BEFF;
+      --color-code-bg: #1e1e32;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1,
+    h2 {
+      color: white;
+    }
+
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    .card {
+      background-color: var(--color-card);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      border: 1px solid #333;
+    }
+
+    code,
+    pre {
+      font-family: 'Fira Code', monospace;
+      background-color: var(--color-code-bg);
+      border-radius: 6px;
+    }
+
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+    }
+
+    code {
+      padding: 2px 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--color-accent);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <a href="/" style="display: inline-flex; align-items: center; margin-bottom: 20px;">
+      ← Back to KaggleIngest
+    </a>
+
+    <div class="card">
+      <h1>TOON Format <span class="badge">v2.0</span></h1>
+      <p><strong>Token-Oriented Object Notation (TOON)</strong> is a compact, LLM-friendly data format designed to save
+        context window space.</p>
+
+      <h2>Why TOON?</h2>
+      <ul>
+        <li>🚀 <strong>30-60% fewer tokens</strong> compared to JSON</li>
+        <li>📖 Human-readable tabular structure</li>
+        <li>🤖 Optimized for LLM parsing (ChatGPT, Claude, Gemini)</li>
+      </ul>
+
+      <h2>Example</h2>
+      <pre>metadata{Title,URL,Description,Status}
+Titanic - Machine Learning from Disaster,https://www.kaggle.com/c/titanic,Predict survival,Active
+
+schema{File,Columns}
+train.csv,[PassengerId (int64), Survived (int64), Pclass (int64)]
+
+notebooks{index,title,author,upvotes}
+1,Titanic Data Science Solutions,Manav Sehgal,12345
+2,Ensemble Modeling,Yassine Ghouzam,10234
+
+statistics{total_requested,successful,failed}
+5,5,0</pre>
+
+      <h2>Specification</h2>
+      <p>TOON uses a header-row structure similar to CSV but grouped by sections. Each section starts with
+        <code>section_name{columns}</code> followed by data rows.</p>
+    </div>
+  </div>
+</body>
+
+</html>

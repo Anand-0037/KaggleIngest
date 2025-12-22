@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Cache
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# Logs
+*.log
+kaggle_ingest.log
+
+# Output files
+outputs/
+*.txt
+*.toon
+*.md
+!README.md
+!TESTS.md
+
+# Notebooks
+*.ipynb
+
+# Dev files
+.env
+.env.*
+uv.lock
+
+# Testing
+test_*.py
+htmlcov/
+.coverage

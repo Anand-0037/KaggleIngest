@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build: .
+    environment:
+      - LOG_LEVEL=INFO
+      - RATE_LIMIT=200
+      - CORS_ORIGINS=http://localhost:3000
+    volumes:
+      - ./outputs:/app/outputs
+      - ${HOME}/.kaggle:/home/appuser/.kaggle:ro
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

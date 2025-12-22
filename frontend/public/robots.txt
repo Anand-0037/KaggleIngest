@@ -1,0 +1,12 @@
+# KaggleIngest Robots Configuration
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://kaggleingest.com/sitemap.xml
+
+# Disallow API endpoints from indexing
+Disallow: /get-context
+Disallow: /jobs/
+Disallow: /health
+Disallow: /metrics

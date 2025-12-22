@@ -1,0 +1,84 @@
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 48px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  margin-bottom: 24px;
+}
+
+.logoContainer {
+  font-size: 1.4rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  padding: 8px 16px;
+  border-radius: 12px;
+  background-color: var(--color-background);
+}
+
+.navLinks {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.llmsLink {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: all 0.2s;
+  background-color: var(--color-background);
+}
+
+.githubLink {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 24px;
+  }
+
+  .logoContainer {
+    font-size: 1.2rem;
+    padding: 6px 12px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .logoContainer {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .navLinks {
+    width: 100%;
+    justify-content: center;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .githubLink {
+    display: none;
+  }
+}

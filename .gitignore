@@ -1,0 +1,144 @@
+# =====================
+# KaggleIngest Root .gitignore
+# =====================
+
+# ---------------------
+# Node.js
+# ---------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# ---------------------
+# Build outputs
+# ---------------------
+dist/
+dist-ssr/
+build/
+*.local
+.output/
+.nuxt/
+.next/
+future-todo.md
+Gemini.md
+README.md
+chrome-extension/
+digest.txt
+python-package/
+
+# ---------------------
+# Python
+# ---------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Distribution
+*.whl
+MANIFEST
+
+# ---------------------
+# IDE / Editors
+# ---------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.settings/
+
+# ---------------------
+# OS-specific
+# ---------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------------------
+# Logs
+# ---------------------
+logs/
+*.log
+
+# ---------------------
+# Testing artifacts
+# ---------------------
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# ---------------------
+# Secrets / Credentials
+# ---------------------
+.env
+*.env
+!.env.example
+kaggle.json
+.kaggle/
+*.pem
+*.key
+
+# ---------------------
+# Database
+# ---------------------
+*.sqlite3
+*.db
+*.rdb
+
+# ---------------------
+# Misc
+# ---------------------
+*.lock
+!package-lock.json
+!uv.lock
+.personal.md
+.rules.md

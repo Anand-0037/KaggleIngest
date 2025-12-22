@@ -1,0 +1,146 @@
+.resultViewer {
+  /* Container if needed */
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.exportSection {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 24px;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: var(--color-surface);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+}
+
+.statLabel {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.previewTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.codeContainer {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background-color: #1e1e1e;
+}
+
+.codePre {
+  margin: 0;
+  padding: 24px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 500px;
+  overflow: auto;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 768px) {
+  .headerRow {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .actionButtons {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .actionButtons button {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 120px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .statCard {
+    padding: 16px;
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .codePre {
+    padding: 16px;
+    font-size: 12px;
+  }
+
+  .statCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .statLabel {
+    margin-bottom: 0;
+  }
+}
+
+.resultBody {
+  background-color: var(--color-background);
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .resultBody {
+    padding: 16px;
+  }
+}

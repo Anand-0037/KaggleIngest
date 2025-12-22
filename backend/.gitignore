@@ -1,0 +1,15 @@
+.personal.md
+kaggle.json
+.env
+.kaggle
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+.kaggle/ 
+kaggle.json
+.vscode/
+.rules.md
