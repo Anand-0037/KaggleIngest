@@ -123,8 +123,8 @@ export default function ResultViewer({ result, onDownload }) {
             onClick={() => handleCopy('main')}
             className="btn"
             style={{
-              background: copiedId === 'main' ? 'var(--color-success)' : '#20BEFF',
-              color: 'white',
+              background: copiedId === 'main' ? 'var(--color-success)' : 'var(--color-primary)',
+              color: 'var(--color-button-text)',
               fontWeight: '600',
               border: 'none',
               minWidth: '140px'

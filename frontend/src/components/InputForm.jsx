@@ -103,7 +103,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
   return (
     <div className={styles.heroSection} style={{ padding: '20px 0', marginBottom: '20px' }}>
       <h1 className={styles.heroTitle} style={{ fontSize: '2rem', marginBottom: '8px' }}>
-        Welcome to <span style={{ color: '#20BEFF' }}>Kaggle</span>Ingest
+        Welcome to <span style={{ color: 'var(--color-primary)' }}>Kaggle</span>Ingest
       </h1>
 
       <p className={styles.heroSubtitle} style={{ fontSize: '1rem', margin: 0 }}>
@@ -121,7 +121,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
               <div style={{
                 height: '100%',
                 width: `${status.progress.percent}%`,
-                background: '#20BEFF',
+                background: 'var(--color-primary)',
                 transition: 'width 0.5s ease'
               }} />
             </div>
@@ -258,7 +258,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)' }}>• Jumpstart your submission</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '10px', color: 'var(--color-text-secondary)', borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
-              <span style={{ color: '#20BEFF', fontWeight: 'bold' }}>LLM Optimized</span> — <a href="/toon.html" target="_blank" style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>TOON</a> saves tokens
+              <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>LLM Optimized</span> — <a href="/toon.html" target="_blank" style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>TOON</a> saves tokens
             </p>
           </div>
         </div>
