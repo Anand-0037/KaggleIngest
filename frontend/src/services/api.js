@@ -1,4 +1,11 @@
+// Use environment variable if present, otherwise fallback to empty string (relative path)
+// For local development, this defaults to empty string if not set, which works if proxied
 export const API_BASE = import.meta.env.VITE_API_URL || '';
+
+// Debug logging for developer convenience (removed in final builds)
+if (import.meta.env.DEV) {
+  console.log("KaggleIngest API_BASE:", API_BASE || "Relative (Proxy)");
+}
 
 
 export async function ingestContext(payload) {

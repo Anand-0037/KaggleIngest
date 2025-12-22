@@ -41,11 +41,16 @@ DEFAULT_CORS_ORIGINS = [
 
 # Get CORS origins from environment or use defaults
 _cors_origins_str = os.getenv("CORS_ORIGINS")
-CORS_ORIGINS = (
-    _parse_cors_origins(_cors_origins_str)
-    if _cors_origins_str is not None
-    else DEFAULT_CORS_ORIGINS
-)
+if not _cors_origins_str and os.getenv("ENV") == "production":
+    # In production, we should NOT have loose defaults
+    CORS_ORIGINS = []
+    print("WARNING: ENV=production but CORS_ORIGINS is not set. API will be inaccessible from browsers.")
+else:
+    CORS_ORIGINS = (
+        _parse_cors_origins(_cors_origins_str)
+        if _cors_origins_str is not None
+        else DEFAULT_CORS_ORIGINS
+    )
 
 # Security headers configuration
 SECURE_HEADERS = {

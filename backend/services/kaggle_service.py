@@ -74,6 +74,16 @@ class KaggleService:
         Thread-safe with double-check locking.
         Credentials are restored immediately after authenticate().
         """
+        # Fallback to KAGGLE_CONFIG_JSON if no credentials provided
+        if not kaggle_creds:
+            config_json = os.environ.get("KAGGLE_CONFIG_JSON")
+            if config_json:
+                try:
+                    kaggle_creds = json.loads(config_json)
+                    logger.debug("Using credentials from KAGGLE_CONFIG_JSON env var")
+                except Exception as e:
+                    logger.warning(f"Failed to parse KAGGLE_CONFIG_JSON: {e}")
+
         cache_key = self._get_cache_key(kaggle_creds)
 
         # Fast path: cached client (no lock needed)
