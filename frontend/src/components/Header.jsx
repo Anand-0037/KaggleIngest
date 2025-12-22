@@ -28,7 +28,7 @@ const Header = () => {
         <a href="/llms.txt" target="_blank" className={styles.llmsLink}>
           /llms.txt
         </a>
-        <a href="#" className={styles.githubLink}>GitHub</a>
+        <a href="https://github.com/Anand-0037/KaggleIngest" target="_blank" rel="noopener noreferrer" className={styles.githubLink}>GitHub</a>
       </div>
     </div>
   );
