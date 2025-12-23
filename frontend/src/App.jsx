@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import InputForm from './components/InputForm';
 import ResultViewer from './components/ResultViewer';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import { ingestContext, pollJobStatus, getJobDownloadUrl } from './services/api';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
@@ -120,6 +121,7 @@ function IngestApp() { // Main content within Provider
         <ResultViewer result={result} onDownload={handleDownload} />
 
       </div>
+      <Footer />
     </>
   );
 }

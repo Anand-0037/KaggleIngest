@@ -41,8 +41,13 @@
 }
 
 .githubLink {
-  color: var(--color-text-secondary);
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   text-decoration: none;
+  transition: all 0.2s;
+  background-color: var(--color-background);
 }
 
 @media (max-width: 768px) {
