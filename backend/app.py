@@ -51,7 +51,7 @@ from config import (
 from core.exceptions import URLParseError
 from core.file_cache import get_file_cache
 from core.jobs import IngestRequestBody, JobRequest, JobStatus
-from core.redis_cache import close_redis_cache, get_redis_cache
+from core.redis_cache import close_redis_cache, get_redis_cache, get_upstash_cache, use_upstash
 from core.utils import extract_resource
 from logger import get_logger, setup_logging
 from services.kaggle_service import KaggleService
@@ -105,12 +105,21 @@ async def lifespan(app: FastAPI):
     """Application lifespan: startup and shutdown."""
     app.state.start_time = time.time()
 
-    # Initialize Redis cache
-    cache = await get_redis_cache()
-    app.state.cache = cache
-    app.state.local_jobs = {} # Helper for non-Redis fallback
+    # Initialize cache (Upstash if configured, else standard Redis)
+    if use_upstash():
+        upstash_cache = get_upstash_cache()
+        app.state.cache = upstash_cache
+        app.state.use_upstash = True
+        cache_status = "Upstash" if upstash_cache.is_connected else "disabled"
+    else:
+        cache = await get_redis_cache()
+        app.state.cache = cache
+        app.state.use_upstash = False
+        cache_status = "Redis" if cache.is_connected else "disabled"
 
-    # Initialize ARQ Redis Pool
+    app.state.local_jobs = {}  # Helper for non-Redis fallback
+
+    # Initialize ARQ Redis Pool (still needs TCP connection for job queue)
     try:
         # Parse REDIS_URL or use defaults
         # Simple parse for demo, arq usually takes settings
@@ -126,7 +135,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize ARQ pool: {e}")
         app.state.arq_pool = None
 
-    logger.info(f"KaggleIngest API v5.0 starting up (Redis: {'connected' if cache.is_connected else 'disabled'})")
+    logger.info(f"KaggleIngest API v5.0 starting up (Cache: {cache_status})")
 
     yield
 
@@ -256,8 +265,10 @@ async def health_check():
         "dependencies": {}
     }
 
-    # Check Redis
-    status["dependencies"]["redis"] = cache.is_connected if cache else False
+    # Check cache (Upstash or Redis)
+    cache_type = "upstash" if getattr(app.state, 'use_upstash', False) else "redis"
+    status["dependencies"]["cache"] = cache.is_connected if cache else False
+    status["dependencies"]["cache_type"] = cache_type if (cache and cache.is_connected) else "none"
 
     # Check cache directory
     cache_path = os.path.expanduser("~/.cache/kaggleingest")
