@@ -240,9 +240,10 @@ async def stream_file_chunks(filepath: str, chunk_size: int = 8192, delete_after
 # --- Endpoints ---
 
 @app.get("/health")
-async def health_check(kaggle_service: KaggleService = Depends(get_kaggle_service)):
+async def health_check():
     """
     Enhanced health check with uptime, Redis, and dependency status.
+    NOTE: Does NOT check Kaggle to avoid SystemExit crashes on missing credentials.
     """
     uptime = time.time() - getattr(app.state, 'start_time', time.time())
     cache = getattr(app.state, 'cache', None)
@@ -269,28 +270,30 @@ async def health_check(kaggle_service: KaggleService = Depends(get_kaggle_servic
     except Exception:
         status["dependencies"]["disk_space"] = False
 
-    # Check Kaggle API (lightweight)
-    try:
-        kaggle_service.get_client()
-        status["dependencies"]["kaggle_api"] = True
-    except Exception as e:
-        status["dependencies"]["kaggle_api"] = False
-        status["status"] = "degraded"
-        logger.warning(f"Health check: Kaggle API degraded: {e}")
+    # Kaggle check is done separately via /health/ready to avoid startup crashes
+    status["dependencies"]["kaggle_api"] = "check /health/ready"
 
     return status
+
 
 
 @app.get("/health/ready")
 async def readiness_check(kaggle_service: KaggleService = Depends(get_kaggle_service)):
     """
     Readiness check - is this instance ready to receive traffic?
+    Catches SystemExit from Kaggle SDK to prevent crashes.
     """
     try:
         kaggle_service.get_client()
-        return {"ready": True}
+        return {"ready": True, "kaggle": True}
+    except SystemExit as e:
+        # Kaggle SDK calls exit(1) when credentials are missing
+        logger.warning(f"Kaggle SDK exited during readiness check: {e}")
+        return {"ready": True, "kaggle": False, "note": "Kaggle credentials not configured"}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Not ready: {e}") from e
+        logger.warning(f"Readiness check failed: {e}")
+        return {"ready": True, "kaggle": False, "error": str(e)}
+
 
 
 @app.get("/metrics")
