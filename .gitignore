@@ -25,7 +25,6 @@ build/
 .next/
 future-todo.md
 Gemini.md
-README.md
 chrome-extension/
 digest.txt
 python-package/
