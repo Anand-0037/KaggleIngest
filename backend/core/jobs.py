@@ -14,7 +14,7 @@ class JobStatus(str, Enum):
 class IngestRequestBody(BaseModel):
     """Request body for POST /get-context endpoint."""
     url: str = Field(..., description="Kaggle competition or dataset URL")
-    top_n: int = Field(10, ge=1, le=50, description="Number of notebooks to fetch")
+    top_n: int = Field(10, ge=1, le=10, description="Number of notebooks to fetch")
     output_format: str = Field("toon", pattern="^(txt|toon|md)$", description="Output format")
     dry_run: bool = Field(False, description="Validate only without downloading")
     stream: bool = Field(True, description="Stream response to reduce memory")

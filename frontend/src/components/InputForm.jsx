@@ -73,12 +73,12 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
   };
 
   const handleNumberChange = (value) => {
-    const num = Math.max(1, Math.min(50, parseInt(value) || 1));
+    const num = Math.max(1, Math.min(10, parseInt(value) || 1));
     setOptions({ ...options, top_n: num });
   };
 
   const incrementNumber = () => {
-    if (options.top_n < 50) {
+    if (options.top_n < 10) {
       setOptions({ ...options, top_n: options.top_n + 1 });
     }
   };
@@ -178,7 +178,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
               <input
                 type="number"
                 min="1"
-                max="50"
+                max="10"
                 value={options.top_n}
                 onChange={(e) => handleNumberChange(e.target.value)}
                 disabled={isLoading}
@@ -187,7 +187,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
               <button
                 type="button"
                 onClick={incrementNumber}
-                disabled={isLoading || options.top_n >= 50}
+                disabled={isLoading || options.top_n >= 10}
                 className={styles.stepperBtn}
               >
                 +

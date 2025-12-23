@@ -55,7 +55,7 @@ class NotebookService:
         identifier: str,
         top_n: int = 10,
         kaggle_creds: dict[str, str] | None = None,
-        language: str | None = None,
+        language: str | None = "python",  # Default to Python to filter out R notebooks
         dry_run: bool = False,
         progress_callback: Callable | None = None,
     ) -> dict[str, Any]:

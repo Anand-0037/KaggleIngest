@@ -1,119 +1,443 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TOON Format v2.0 - Token-Oriented Object Notation</title>
+    <meta
+      name="description"
+      content="TOON (Token-Oriented Object Notation) is a compact, LLM-friendly data format achieving 30-60% token reduction compared to JSON."
+    />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <style>
+      :root {
+        --color-bg: #1a1a2e;
+        --color-card: #252542;
+        --color-text: #e0e0e0;
+        --color-text-dim: #9aa0a6;
+        --color-accent: #20beff;
+        --color-code-bg: #1e1e32;
+        --color-success: #81c995;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOON Format - Token-Oriented Object Notation</title>
-  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-  <style>
-    :root {
-      --color-bg: #1a1a2e;
-      --color-card: #252542;
-      --color-text: #e0e0e0;
-      --color-accent: #20BEFF;
-      --color-code-bg: #1e1e32;
-    }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        line-height: 1.6;
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      line-height: 1.6;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-    }
+      .container {
+        max-width: 900px;
+        width: 100%;
+      }
 
-    .container {
-      max-width: 800px;
-      width: 100%;
-    }
+      h1,
+      h2,
+      h3 {
+        color: white;
+      }
 
-    h1,
-    h2 {
-      color: white;
-    }
+      h2 {
+        margin-top: 32px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 8px;
+      }
 
-    a {
-      color: var(--color-accent);
-      text-decoration: none;
-    }
+      h3 {
+        margin-top: 24px;
+        color: var(--color-accent);
+      }
 
-    .card {
-      background-color: var(--color-card);
-      border-radius: 12px;
-      padding: 32px;
-      margin-bottom: 24px;
-      border: 1px solid #333;
-    }
+      a {
+        color: var(--color-accent);
+        text-decoration: none;
+      }
 
-    code,
-    pre {
-      font-family: 'Fira Code', monospace;
-      background-color: var(--color-code-bg);
-      border-radius: 6px;
-    }
+      a:hover {
+        text-decoration: underline;
+      }
 
-    pre {
-      padding: 16px;
-      overflow-x: auto;
-    }
+      .card {
+        background-color: var(--color-card);
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 24px;
+        border: 1px solid #333;
+      }
 
-    code {
-      padding: 2px 6px;
-    }
+      code,
+      pre {
+        font-family: 'Fira Code', 'Consolas', monospace;
+        background-color: var(--color-code-bg);
+        border-radius: 6px;
+      }
 
-    .badge {
-      display: inline-block;
-      background: var(--color-accent);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.9em;
-    }
-  </style>
-</head>
+      pre {
+        padding: 16px;
+        overflow-x: auto;
+        font-size: 14px;
+      }
 
-<body>
-  <div class="container">
-    <a href="/" style="display: inline-flex; align-items: center; margin-bottom: 20px;">
-      ← Back to KaggleIngest
-    </a>
+      code {
+        padding: 2px 6px;
+        font-size: 0.9em;
+      }
 
-    <div class="card">
-      <h1>TOON Format <span class="badge">v2.0</span></h1>
-      <p><strong>Token-Oriented Object Notation (TOON)</strong> is a compact, LLM-friendly data format designed to save
-        context window space.</p>
+      .badge {
+        display: inline-block;
+        background: var(--color-accent);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.85em;
+        margin-left: 8px;
+      }
 
-      <h2>Why TOON?</h2>
-      <ul>
-        <li>🚀 <strong>30-60% fewer tokens</strong> compared to JSON</li>
-        <li>📖 Human-readable tabular structure</li>
-        <li>🤖 Optimized for LLM parsing (ChatGPT, Claude, Gemini)</li>
-      </ul>
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
 
-      <h2>Example</h2>
-      <pre>metadata{Title,URL,Description,Status}
-Titanic - Machine Learning from Disaster,https://www.kaggle.com/c/titanic,Predict survival,Active
+      .stat-card {
+        background: var(--color-code-bg);
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+      }
 
-schema{File,Columns}
-train.csv,[PassengerId (int64), Survived (int64), Pclass (int64)]
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--color-accent);
+      }
 
-notebooks{index,title,author,upvotes}
-1,Titanic Data Science Solutions,Manav Sehgal,12345
-2,Ensemble Modeling,Yassine Ghouzam,10234
+      .stat-label {
+        font-size: 0.9rem;
+        color: var(--color-text-dim);
+      }
 
-statistics{total_requested,successful,failed}
-5,5,0</pre>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 0.95rem;
+      }
 
-      <h2>Specification</h2>
-      <p>TOON uses a header-row structure similar to CSV but grouped by sections. Each section starts with
-        <code>section_name{columns}</code> followed by data rows.</p>
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #333;
+      }
+
+      th {
+        background: var(--color-code-bg);
+        font-weight: 600;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .feature-list li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .feature-list li::before {
+        content: '-';
+        color: var(--color-success);
+        font-weight: bold;
+      }
+
+      .use-case {
+        display: flex;
+        gap: 20px;
+        margin: 16px 0;
+      }
+
+      .use-case-col {
+        flex: 1;
+        padding: 16px;
+        background: var(--color-code-bg);
+        border-radius: 8px;
+      }
+
+      .use-case-col h4 {
+        margin: 0 0 12px 0;
+        color: var(--color-success);
+      }
+
+      .use-case-col.caution h4 {
+        color: #f0ad4e;
+      }
+
+      @media (max-width: 600px) {
+        .use-case {
+          flex-direction: column;
+        }
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <a
+        href="/"
+        style="display: inline-flex; align-items: center; margin-bottom: 20px"
+      >
+        Back to KaggleIngest
+      </a>
+
+      <div class="card">
+        <h1>TOON Format <span class="badge">v2.0</span></h1>
+        <p>
+          <strong>Token-Oriented Object Notation (TOON)</strong> is a
+          production-ready data format that achieves
+          <strong>30-60% token reduction</strong> compared to JSON while
+          improving LLM accuracy by <strong>3-20%</strong> across different task
+          types.
+        </p>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">39.6%</div>
+            <div class="stat-label">Fewer Tokens vs JSON</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">73.9%</div>
+            <div class="stat-label">LLM Accuracy (vs 69.7%)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">9+</div>
+            <div class="stat-label">Official Implementations</div>
+          </div>
+        </div>
+
+        <h2>Why TOON?</h2>
+        <ul class="feature-list">
+          <li>30-60% fewer tokens compared to JSON</li>
+          <li>Human-readable tabular structure</li>
+          <li>Optimized for LLM parsing (ChatGPT, Claude, Gemini)</li>
+          <li>Full round-trip JSON compatibility</li>
+          <li>Explicit structure helps LLMs validate data</li>
+        </ul>
+
+        <h2>Example</h2>
+        <pre>
+metadata:
+  title: Kaggle Competition
+  url: https://www.kaggle.com/c/titanic
+  status: Active
+
+notebooks[2]{index,title,author,upvotes}:
+  1,Titanic Data Science Solutions,Manav Sehgal,12345
+  2,Ensemble Modeling,Yassine Ghouzam,10234
+
+statistics{total_requested,successful,failed}:
+  5,5,0</pre
+        >
+
+        <h2>Key Features</h2>
+
+        <h3>1. Tabular Arrays (TOON's Sweet Spot)</h3>
+        <p>Declare field names once, stream rows as comma-separated values:</p>
+        <pre>
+notebooks[2]{index,title,author,upvotes}:
+  1,Titanic Data Science Solutions,Manav Sehgal,12345
+  2,Ensemble Modeling,Yassine Ghouzam,10234</pre
+        >
+
+        <h3>2. Nested Objects with Indentation</h3>
+        <p>Like YAML, uses whitespace instead of braces:</p>
+        <pre>
+metadata:
+  title: Kaggle Competition
+  url: https://www.kaggle.com/c/titanic
+  status: Active</pre
+        >
+
+        <h3>3. Smart Quoting</h3>
+        <p>Quotes only when necessary:</p>
+        <ul>
+          <li><code>hello world</code> - Unquoted (inner spaces OK)</li>
+          <li><code>"hello, world"</code> - Quoted (contains delimiter)</li>
+          <li><code>" padded "</code> - Quoted (leading/trailing spaces)</li>
+        </ul>
+
+        <h2>When to Use TOON</h2>
+        <div class="use-case">
+          <div class="use-case-col">
+            <h4>Best For</h4>
+            <ul>
+              <li>Large tabular datasets (50-60% savings)</li>
+              <li>LLM prompts with structured data</li>
+              <li>Time-series data (59% reduction)</li>
+              <li>Budget-conscious LLM applications</li>
+            </ul>
+          </div>
+          <div class="use-case-col caution">
+            <h4>Consider Alternatives For</h4>
+            <ul>
+              <li>Pure CSV data (CSV is ~5% smaller)</li>
+              <li>Deeply nested structures</li>
+              <li>Existing JSON pipelines</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>Official Resources</h2>
+        <table>
+          <tr>
+            <th>Resource</th>
+            <th>URL</th>
+          </tr>
+          <tr>
+            <td>Official Website</td>
+            <td>
+              <a href="https://toonformat.dev" target="_blank"
+                >toonformat.dev</a
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>GitHub Organization</td>
+            <td>
+              <a href="https://github.com/toon-format" target="_blank"
+                >github.com/toon-format</a
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>Formal Specification</td>
+            <td>
+              <a
+                href="https://github.com/toon-format/spec/blob/main/SPEC.md"
+                target="_blank"
+                >SPEC.md</a
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>Online Playground</td>
+            <td>
+              <a href="https://toonformat.dev/playground" target="_blank"
+                >toonformat.dev/playground</a
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>TOON Validator</td>
+            <td>
+              <a href="https://jsontotable.org/toon-validator" target="_blank"
+                >jsontotable.org/toon-validator</a
+              >
+            </td>
+          </tr>
+        </table>
+
+        <h2>Implementations</h2>
+        <table>
+          <tr>
+            <th>Language</th>
+            <th>Install</th>
+            <th>Status</th>
+          </tr>
+          <tr>
+            <td>TypeScript/JavaScript</td>
+            <td><code>npm install @toon-format/toon</code></td>
+            <td>Stable</td>
+          </tr>
+          <tr>
+            <td>Python</td>
+            <td><code>pip install toon-format</code></td>
+            <td>Stable</td>
+          </tr>
+          <tr>
+            <td>Rust</td>
+            <td><code>cargo add toon</code></td>
+            <td>Stable</td>
+          </tr>
+          <tr>
+            <td>Java</td>
+            <td>Maven/Gradle</td>
+            <td>Stable</td>
+          </tr>
+          <tr>
+            <td>Swift</td>
+            <td>Swift Package Manager</td>
+            <td>Stable</td>
+          </tr>
+          <tr>
+            <td>Julia</td>
+            <td><code>Pkg.add("ToonFormat")</code></td>
+            <td>Stable</td>
+          </tr>
+        </table>
+        <p style="color: var(--color-text-dim); font-size: 0.9rem">
+          Plus 20+ community implementations: PHP, Ruby, Elixir, Go, .NET,
+          Kotlin, and more.
+          <a
+            href="https://toonformat.dev/ecosystem/implementations.html"
+            target="_blank"
+            >View all →</a
+          >
+        </p>
+
+        <h2>Quick Start</h2>
+        <h3>JavaScript/TypeScript</h3>
+        <pre>
+import { encode, decode } from '@toon-format/toon'
+
+const toon = encode({ users: [...] })
+const data = decode(toon)</pre
+        >
+
+        <h3>Python</h3>
+        <pre>
+from toon import encode, decode
+
+toon = encode({"users": [...]})
+data = decode(toon)</pre
+        >
+
+        <h3>CLI (No Installation)</h3>
+        <pre>npx @toon-format/cli input.json -o output.toon --stats</pre>
+
+        <h2>Specification Highlights</h2>
+        <ul class="feature-list">
+          <li>Complete ABNF grammar (RFC 5234 compatible)</li>
+          <li>Encoding/decoding algorithms</li>
+          <li>Validation rules and error handling</li>
+          <li>Conformance test fixtures (language-agnostic)</li>
+          <li>Edge case specifications</li>
+          <li>Type conversion rules</li>
+        </ul>
+        <p>
+          Full specification:
+          <a
+            href="https://github.com/toon-format/spec/blob/main/SPEC.md"
+            target="_blank"
+            >github.com/toon-format/spec/blob/main/SPEC.md</a
+          >
+        </p>
+      </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>
