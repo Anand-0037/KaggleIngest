@@ -42,7 +42,7 @@ outputs/
 # Dev files
 .env
 .env.*
-uv.lock
+
 
 # Testing
 test_*.py
