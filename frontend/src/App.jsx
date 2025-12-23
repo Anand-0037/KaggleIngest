@@ -86,7 +86,7 @@ function IngestApp() { // Main content within Provider
       setTimeout(() => {
         handleIngest({
           url: kaggleUrl,
-          top_n: 10,
+          top_n: 3,
           output_format: 'toon',
           dry_run: false
         });

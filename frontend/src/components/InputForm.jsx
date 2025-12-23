@@ -19,7 +19,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
   const fileInputRef = useRef(null);
 
   const [options, setOptions] = useState({
-    top_n: 10,
+    top_n: 3,
     output_format: 'toon',
     dry_run: false
   });
