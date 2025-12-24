@@ -78,15 +78,20 @@ export default function ResultViewer({ result, onDownload }) {
       }
     }
 
-    await navigator.clipboard.writeText(textToCopy);
-    setCopiedId(id);
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedId(id);
 
-    // Clear feedback after 2s
-    setTimeout(() => setCopiedId(null), 2000);
+      // Clear feedback after 2s
+      setTimeout(() => setCopiedId(null), 2000);
 
-    // Optional: Open external URL
-    if (url) {
-      setTimeout(() => window.open(url, '_blank'), 500);
+      // Optional: Open external URL
+      if (url) {
+        setTimeout(() => window.open(url, '_blank'), 500);
+      }
+    } catch {
+      // Clipboard API not available (e.g., insecure context)
+      alert('Clipboard access denied. Please use HTTPS or copy manually.');
     }
   };
 

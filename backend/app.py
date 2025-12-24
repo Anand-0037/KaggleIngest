@@ -135,16 +135,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize ARQ pool: {e}")
         app.state.arq_pool = None
 
+    # Initialize limiter (must be before yield for startup)
+    app.state.limiter = limiter
+
     logger.info(f"KaggleIngest API v5.0 starting up (Cache: {cache_status})")
 
     yield
 
-    # Initialize Limiter
-    app.state.limiter = limiter
-
-    # Setup cleanup task for cache files
-    # ... (existing cleanup logic)
-
+    # Shutdown cleanup
     executor.shutdown(wait=True)
     if getattr(app.state, 'arq_pool', None):
         await app.state.arq_pool.close()
@@ -267,12 +265,14 @@ async def health_check():
 
     # Check cache (Upstash or Redis)
     cache_type = "upstash" if getattr(app.state, 'use_upstash', False) else "redis"
-    status["dependencies"]["cache"] = cache.is_connected if cache else False
-    status["dependencies"]["cache_type"] = cache_type if (cache and cache.is_connected) else "none"
+    cache_connected = cache.is_connected if cache and hasattr(cache, 'is_connected') else False
+    status["dependencies"]["cache"] = cache_connected
+    status["dependencies"]["cache_type"] = cache_type if cache_connected else "none"
 
-    # Check cache directory
+    # Check cache directory (ensure parent exists before checking access)
     cache_path = os.path.expanduser("~/.cache/kaggleingest")
-    status["dependencies"]["file_cache"] = os.access(os.path.dirname(cache_path), os.W_OK)
+    cache_parent = os.path.dirname(cache_path)
+    status["dependencies"]["file_cache"] = os.path.exists(cache_parent) and os.access(cache_parent, os.W_OK)
 
     # Check disk space (>1GB free)
     try:
