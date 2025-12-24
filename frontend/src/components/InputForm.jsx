@@ -204,7 +204,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
           {showFileUpload && (
             <div className={styles.fileInputWrapper}>
               <p style={{ marginBottom: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                Upload <code>kaggle.json</code> to access private competitions/datasets.
+                Upload <code>kaggle.json</code> to access your private competitions/datasets.
               </p>
               <input
                 type="file"
