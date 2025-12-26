@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getJobDownloadUrl } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import styles from './ResultViewer.module.css';
@@ -13,10 +13,19 @@ export default function ResultViewer({ result, onDownload }) {
 
   const PREVIEW_LIMIT = 200000; // 200KB before truncation
 
+  // Reset preview state when job_id changes (new result)
+  const { job_id } = result || {};
+  useEffect(() => {
+    setPreviewContent(null);
+    setFullContent(null);
+    setShowPreview(false);
+    setIsTruncated(false);
+  }, [job_id]);
+
   // Theme context available if needed
   useTheme();
 
-  const { metadata, stats = {}, job_id } = result || {};
+  const { metadata, stats = {} } = result || {};
 
   // MOVED: Copy Feedback State moved up to be unconditional
   const [copiedId, setCopiedId] = useState(null);
@@ -69,15 +78,20 @@ export default function ResultViewer({ result, onDownload }) {
       }
     }
 
-    await navigator.clipboard.writeText(textToCopy);
-    setCopiedId(id);
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedId(id);
 
-    // Clear feedback after 2s
-    setTimeout(() => setCopiedId(null), 2000);
+      // Clear feedback after 2s
+      setTimeout(() => setCopiedId(null), 2000);
 
-    // Optional: Open external URL
-    if (url) {
-      setTimeout(() => window.open(url, '_blank'), 500);
+      // Optional: Open external URL
+      if (url) {
+        setTimeout(() => window.open(url, '_blank'), 500);
+      }
+    } catch {
+      // Clipboard API not available (e.g., insecure context)
+      alert('Clipboard access denied. Please use HTTPS or copy manually.');
     }
   };
 
@@ -92,11 +106,11 @@ export default function ResultViewer({ result, onDownload }) {
         </h2>
         <div className={styles.actionButtons}>
           <button onClick={handlePreview} className="btn" style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text)',
+            background: 'var(--color-primary)',
+            border: 'none',
+            color: 'var(--color-button-text)',
             fontSize: '13px',
-            fontWeight: '500'
+            fontWeight: '700'
           }}>
             {showPreview ? 'Hide Preview' : 'Show Preview'}
           </button>

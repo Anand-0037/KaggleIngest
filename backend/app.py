@@ -51,7 +51,7 @@ from config import (
 from core.exceptions import URLParseError
 from core.file_cache import get_file_cache
 from core.jobs import IngestRequestBody, JobRequest, JobStatus
-from core.redis_cache import close_redis_cache, get_redis_cache
+from core.redis_cache import close_redis_cache, get_redis_cache, get_upstash_cache, use_upstash
 from core.utils import extract_resource
 from logger import get_logger, setup_logging
 from services.kaggle_service import KaggleService
@@ -105,12 +105,24 @@ async def lifespan(app: FastAPI):
     """Application lifespan: startup and shutdown."""
     app.state.start_time = time.time()
 
-    # Initialize Redis cache
-    cache = await get_redis_cache()
-    app.state.cache = cache
-    app.state.local_jobs = {} # Helper for non-Redis fallback
+    # Initialize cache (Upstash if configured, else standard Redis)
+    if use_upstash():
+        upstash_cache = get_upstash_cache()
+        app.state.cache = upstash_cache
+        app.state.use_upstash = True
+        cache_status = "Upstash" if upstash_cache.is_connected else "disabled"
+    else:
+        cache = await get_redis_cache()
+        app.state.cache = cache
+        app.state.use_upstash = False
+        cache_status = "Redis" if cache.is_connected else "disabled"
 
-    # Initialize ARQ Redis Pool
+    # NOTE: Local memory fallback for non-Redis mode.
+    # WARNING: This dict is NOT shared between workers. Only use with single-worker deployment.
+    # For production with multiple workers (e.g., gunicorn -w 3), you MUST use Redis.
+    app.state.local_jobs = {}
+
+    # Initialize ARQ Redis Pool (still needs TCP connection for job queue)
     try:
         # Parse REDIS_URL or use defaults
         # Simple parse for demo, arq usually takes settings
@@ -126,16 +138,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize ARQ pool: {e}")
         app.state.arq_pool = None
 
-    logger.info(f"KaggleIngest API v5.0 starting up (Redis: {'connected' if cache.is_connected else 'disabled'})")
+    # Initialize limiter (must be before yield for startup)
+    app.state.limiter = limiter
+
+    logger.info(f"KaggleIngest API v5.0 starting up (Cache: {cache_status})")
 
     yield
 
-    # Initialize Limiter
-    app.state.limiter = limiter
-
-    # Setup cleanup task for cache files
-    # ... (existing cleanup logic)
-
+    # Shutdown cleanup
     executor.shutdown(wait=True)
     if getattr(app.state, 'arq_pool', None):
         await app.state.arq_pool.close()
@@ -256,12 +266,16 @@ async def health_check():
         "dependencies": {}
     }
 
-    # Check Redis
-    status["dependencies"]["redis"] = cache.is_connected if cache else False
+    # Check cache (Upstash or Redis)
+    cache_type = "upstash" if getattr(app.state, 'use_upstash', False) else "redis"
+    cache_connected = cache.is_connected if cache and hasattr(cache, 'is_connected') else False
+    status["dependencies"]["cache"] = cache_connected
+    status["dependencies"]["cache_type"] = cache_type if cache_connected else "none"
 
-    # Check cache directory
+    # Check cache directory (ensure parent exists before checking access)
     cache_path = os.path.expanduser("~/.cache/kaggleingest")
-    status["dependencies"]["file_cache"] = os.access(os.path.dirname(cache_path), os.W_OK)
+    cache_parent = os.path.dirname(cache_path)
+    status["dependencies"]["file_cache"] = os.path.exists(cache_parent) and os.access(cache_parent, os.W_OK)
 
     # Check disk space (>1GB free)
     try:
@@ -278,9 +292,16 @@ async def health_check():
 
 
 @app.get("/health/ready")
-async def readiness_check(kaggle_service: KaggleService = Depends(get_kaggle_service)):
+async def readiness_check(
+    response: Response,
+    kaggle_service: KaggleService = Depends(get_kaggle_service)
+):
     """
     Readiness check - is this instance ready to receive traffic?
+
+    Returns 503 if Kaggle credentials are missing, signaling to load balancers
+    that this instance cannot handle private competition requests.
+
     Catches SystemExit from Kaggle SDK to prevent crashes.
     """
     try:
@@ -289,10 +310,20 @@ async def readiness_check(kaggle_service: KaggleService = Depends(get_kaggle_ser
     except SystemExit as e:
         # Kaggle SDK calls exit(1) when credentials are missing
         logger.warning(f"Kaggle SDK exited during readiness check: {e}")
-        return {"ready": True, "kaggle": False, "note": "Kaggle credentials not configured"}
+        response.status_code = 503
+        return {
+            "ready": False,
+            "kaggle": False,
+            "note": "Kaggle credentials not configured. Private competitions unavailable."
+        }
     except Exception as e:
         logger.warning(f"Readiness check failed: {e}")
-        return {"ready": True, "kaggle": False, "error": str(e)}
+        response.status_code = 503
+        return {
+            "ready": False,
+            "kaggle": False,
+            "error": str(e)
+        }
 
 
 
@@ -422,7 +453,7 @@ async def submit_ingest_job_upload(
     ),
     output_format: str = Query(
         "txt",
-        pattern="^(txt|toon|md)$",
+        pattern="^(txt|toon)$",
         description="Output format (txt, toon, md)"
     ),
     dry_run: bool = Query(False, description="Validate only"),
@@ -506,7 +537,7 @@ async def submit_ingest_job_upload(
 @app.get("/jobs/{job_id}/download")
 async def download_job_result(
     job_id: str,
-    format: str = Query("txt", pattern="^(txt|toon|md)$"),
+    format: str = Query("txt", pattern="^(txt|toon)$"),
     notebook_service: NotebookService = Depends(get_notebook_service)
 ):
     """

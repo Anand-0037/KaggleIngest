@@ -3,7 +3,7 @@ import os
 
 # API Configuration
 API_TITLE = "KaggleIngest API"
-API_VERSION = "2.0"
+API_VERSION = "5.0.0"  # Single source of truth for version
 
 # Supported output formats
 SUPPORTED_OUTPUT_FORMATS = ["txt", "toon"]

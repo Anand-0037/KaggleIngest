@@ -147,6 +147,8 @@ frontend/playwright-report/
 **/.pytest_cache/
 **/.ruff_cache/
 **/.ipynb_checkpoints/
+GEMINI.md
+Gemini.md
 
 # Internal Dev / Guidance
 **/DEPLOYMENT.md
@@ -157,3 +159,4 @@ frontend/playwright-report/
 backend/docs/TOON_SPEC.md
 **/llms.txt
 promote/
+rules.md

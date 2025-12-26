@@ -7,7 +7,9 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
     # via pydantic
 anyio==4.12.0
-    # via starlette
+    # via
+    #   httpx
+    #   starlette
 arq==0.26.3
     # via kaggleingest
 async-timeout==5.0.1 ; python_full_version < '3.11.3'
@@ -17,7 +19,10 @@ black==25.12.0
 bleach==6.3.0
     # via kaggle
 certifi==2025.11.12
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 charset-normalizer==3.4.4
     # via requests
 click==8.3.1
@@ -36,12 +41,19 @@ fastapi==0.124.4
 filelock==3.20.0
     # via kaggleingest
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
 hiredis==3.3.0
     # via redis
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via upstash-redis
 idna==3.11
     # via
     #   anyio
+    #   httpx
     #   requests
 kaggle==1.8.2
     # via kaggleingest
@@ -136,6 +148,8 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
+upstash-redis==1.5.0
+    # via kaggleingest
 urllib3==2.6.2
     # via
     #   kaggle

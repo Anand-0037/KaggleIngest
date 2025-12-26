@@ -5,9 +5,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 
-> **The Bridge Between Kaggle Data and LLMs.**
+> **Win any Kaggle competition easily by digesting all competition metadata into a single file.**
 
-KaggleIngest transforms complex Kaggle competitions, datasets, and notebooks into high-quality, token-optimized context for Large Language Models. It solves the "context window" problem by intelligently ranking content and stripping noise.
+KaggleIngest transforms complex Kaggle competitions, datasets, and notebooks into high-quality, token-optimized context for Large Language Models. Get help from your favorite LLMs in TOON format for fewer tokens.
 
 🌐 **Live Demo:** [https://kaggleingest.com](https://kaggleingest.com)
 
