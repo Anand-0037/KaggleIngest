@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" width="16" height="16">
+  <rect x="5" y="5" width="90" height="90" rx="18" fill="#262626"/>
+  <path d="M20 18 L20 82 L32 82 L32 55 L54 82 L70 82 L44 50 L68 18 L52 18 L32 46 L32 18 Z" fill="#20BEFF"/>
+  <path d="M74 18 L74 82 L86 82 L86 18 Z" fill="white"/>
+</svg>
+</CodeContent>
+<parameter name="Complexity">1

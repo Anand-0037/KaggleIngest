@@ -1,5 +1,5 @@
 {
-  "name": "kaggleingest-ui",
+  "name": "kaggleingest-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",

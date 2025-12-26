@@ -117,7 +117,10 @@ async def lifespan(app: FastAPI):
         app.state.use_upstash = False
         cache_status = "Redis" if cache.is_connected else "disabled"
 
-    app.state.local_jobs = {}  # Helper for non-Redis fallback
+    # NOTE: Local memory fallback for non-Redis mode.
+    # WARNING: This dict is NOT shared between workers. Only use with single-worker deployment.
+    # For production with multiple workers (e.g., gunicorn -w 3), you MUST use Redis.
+    app.state.local_jobs = {}
 
     # Initialize ARQ Redis Pool (still needs TCP connection for job queue)
     try:
@@ -289,9 +292,16 @@ async def health_check():
 
 
 @app.get("/health/ready")
-async def readiness_check(kaggle_service: KaggleService = Depends(get_kaggle_service)):
+async def readiness_check(
+    response: Response,
+    kaggle_service: KaggleService = Depends(get_kaggle_service)
+):
     """
     Readiness check - is this instance ready to receive traffic?
+
+    Returns 503 if Kaggle credentials are missing, signaling to load balancers
+    that this instance cannot handle private competition requests.
+
     Catches SystemExit from Kaggle SDK to prevent crashes.
     """
     try:
@@ -300,10 +310,20 @@ async def readiness_check(kaggle_service: KaggleService = Depends(get_kaggle_ser
     except SystemExit as e:
         # Kaggle SDK calls exit(1) when credentials are missing
         logger.warning(f"Kaggle SDK exited during readiness check: {e}")
-        return {"ready": True, "kaggle": False, "note": "Kaggle credentials not configured"}
+        response.status_code = 503
+        return {
+            "ready": False,
+            "kaggle": False,
+            "note": "Kaggle credentials not configured. Private competitions unavailable."
+        }
     except Exception as e:
         logger.warning(f"Readiness check failed: {e}")
-        return {"ready": True, "kaggle": False, "error": str(e)}
+        response.status_code = 503
+        return {
+            "ready": False,
+            "kaggle": False,
+            "error": str(e)
+        }
 
 
 
@@ -433,7 +453,7 @@ async def submit_ingest_job_upload(
     ),
     output_format: str = Query(
         "txt",
-        pattern="^(txt|toon|md)$",
+        pattern="^(txt|toon)$",
         description="Output format (txt, toon, md)"
     ),
     dry_run: bool = Query(False, description="Validate only"),
@@ -517,7 +537,7 @@ async def submit_ingest_job_upload(
 @app.get("/jobs/{job_id}/download")
 async def download_job_result(
     job_id: str,
-    format: str = Query("txt", pattern="^(txt|toon|md)$"),
+    format: str = Query("txt", pattern="^(txt|toon)$"),
     notebook_service: NotebookService = Depends(get_notebook_service)
 ):
     """

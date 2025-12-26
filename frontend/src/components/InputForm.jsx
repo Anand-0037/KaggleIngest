@@ -107,7 +107,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
       </h1>
 
       <p className={styles.heroSubtitle} style={{ fontSize: '1rem', margin: 0 }}>
-        Turn any Kaggle competition metadata into a simple text digest for your LLM.
+        Win Kaggle Competitions Faster — Full Context for Your AI.
       </p>
 
       <div className={styles.card}>
@@ -159,9 +159,8 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
               disabled={isLoading}
               className={styles.select}
             >
-              <option value="txt">Text (.txt)</option>
               <option value="toon">TOON (.toon)</option>
-              <option value="md">Markdown (.md)</option>
+              <option value="txt">Text (.txt)</option>
             </select>
           </label>
           <label className={styles.optionLabel}>
