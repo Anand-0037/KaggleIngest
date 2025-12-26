@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OG Image Template - KaggleIngest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background-color: #202124;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle grid pattern */
+    .grid-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        linear-gradient(rgba(32, 190, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(32, 190, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* Single subtle glow */
+    .glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(32, 190, 255, 0.08) 0%, transparent 60%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(40px);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 50px;
+      padding: 60px 80px;
+      width: 100%;
+    }
+
+    /* Logo Section */
+    .logo-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Content Section */
+    .content {
+      flex: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(32, 190, 255, 0.1);
+      border: 1px solid #3c4043;
+      border-radius: 16px;
+      margin-bottom: 20px;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      background: #20BEFF;
+      border-radius: 50%;
+    }
+
+    .badge-text {
+      font-size: 13px;
+      color: #20BEFF;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .title {
+      font-size: 58px;
+      font-weight: 800;
+      color: #e8eaed;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .title .highlight {
+      color: #20BEFF;
+    }
+
+    .tagline {
+      font-size: 22px;
+      color: #9aa0a6;
+      line-height: 1.5;
+      max-width: 580px;
+    }
+
+    .tagline strong {
+      color: #20BEFF;
+      font-weight: 600;
+    }
+
+    /* Domain badge */
+    .domain {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      background: #2d3035;
+      border: 1px solid #3c4043;
+      border-radius: 20px;
+    }
+
+    .domain-icon {
+      width: 20px;
+      height: 20px;
+      color: #20BEFF;
+    }
+
+    .domain-text {
+      font-size: 16px;
+      color: #e8eaed;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-pattern"></div>
+  <div class="glow"></div>
+
+  <div class="container">
+    <div class="logo-section">
+      <div class="logo">
+        <!-- Actual KaggleIngest Logo -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+          <rect x="5" y="5" width="90" height="90" rx="18" fill="#262626"/>
+          <path d="M20 18 L20 82 L32 82 L32 55 L54 82 L70 82 L44 50 L68 18 L52 18 L32 46 L32 18 Z" fill="#20BEFF"/>
+          <path d="M74 18 L74 82 L86 82 L86 18 Z" fill="white"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="badge">
+        <div class="badge-dot"></div>
+        <span class="badge-text">Kaggle → LLM</span>
+      </div>
+      <h1 class="title">
+        <span class="highlight">KaggleIngest</span>
+      </h1>
+      <p class="tagline">
+        Turn any Kaggle competition into <strong>LLM-ready context</strong> in 30 seconds.
+      </p>
+    </div>
+  </div>
+
+  <div class="domain">
+    <svg class="domain-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+    <span class="domain-text">kaggleingest.com</span>
+  </div>
+</body>
+</html>

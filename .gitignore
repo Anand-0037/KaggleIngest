@@ -51,7 +51,6 @@ pip-delete-this-directory.txt
 venv/
 ENV/
 env/
-.env.local
 .env.*.local
 
 # Testing
@@ -79,7 +78,6 @@ MANIFEST
 # IDE / Editors
 # ---------------------
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -119,7 +117,6 @@ logs/
 # ---------------------
 # Secrets / Credentials
 # ---------------------
-.env
 *.env
 !.env.example
 kaggle.json
@@ -147,6 +144,8 @@ frontend/playwright-report/
 **/.pytest_cache/
 **/.ruff_cache/
 **/.ipynb_checkpoints/
+GEMINI.md
+Gemini.md
 
 # Internal Dev / Guidance
 **/DEPLOYMENT.md
@@ -157,3 +156,5 @@ frontend/playwright-report/
 backend/docs/TOON_SPEC.md
 **/llms.txt
 promote/
+rules.md
+config.bat

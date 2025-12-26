@@ -21,6 +21,8 @@ logger = get_logger(__name__)
 
 # =============================================================================
 # SDK PATCH: Fix Kaggle SDK 1.8.x User-Agent=None bug
+# This patch fixes a bug in kagglesdk 1.8.0-1.8.2 where User-Agent is set to None.
+# Can be removed once Kaggle releases a fix (check kagglesdk >= 1.8.3).
 # =============================================================================
 def _patch_kaggle_sdk():
     """Patch kagglesdk to fix User-Agent=None bug."""
