@@ -26,12 +26,7 @@ services:
       - ENV=production
       - LOG_LEVEL=WARNING
       - RATE_LIMIT=200
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - ./outputs:/app/outputs
-      - ${HOME}/.kaggle:/home/appuser/.kaggle:ro
-    depends_on:
-      - redis
+
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
@@ -40,17 +35,7 @@ services:
       retries: 3
       start_period: 10s
 
-  redis:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+
 
   prometheus:
     image: prom/prometheus:latest
@@ -66,5 +51,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  redis-data:
+
   prometheus-data:

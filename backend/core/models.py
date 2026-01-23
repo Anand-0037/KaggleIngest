@@ -86,6 +86,11 @@ class CompetitionMetadata(BaseModel):
     prize: str = Field("", description="Prize information")
     metric: str = Field("", description="Evaluation metric", alias="evaluation")
     deadline: str = Field("", description="Deadline date", alias="dates")
+    enabled_date: str = Field("", description="Competition start date")
+    max_team_size: int = Field(0, description="Maximum team size")
+    max_daily_submissions: int = Field(0, description="Max daily submissions")
+    team_count: int = Field(0, description="Number of teams")
+    leaderboard: list = Field(default_factory=list, description="Top 10 leaderboard")
 
 
 class DatasetMetadata(BaseModel):

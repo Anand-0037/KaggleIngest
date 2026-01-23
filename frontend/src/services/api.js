@@ -1,91 +1,83 @@
-// Use environment variable if present, otherwise fallback to empty string (relative path)
-// For local development, this defaults to empty string if not set, which works if proxied
+// Use environment variable if present, otherwise fallback to empty string (relative path for proxy)
 export const API_BASE = import.meta.env.VITE_API_URL || '';
 
-// Debug logging for developer convenience (removed in final builds)
-if (import.meta.env.DEV) {
-  console.log("KaggleIngest API_BASE:", API_BASE || "Relative (Proxy)");
-}
-
-
+/**
+ * Ingest context for a competition or dataset
+ */
 export async function ingestContext(payload) {
   try {
     let response;
 
-    if (payload.token_file) {
-      // File upload: Use multipart/form-data + query params (works with legacy GET endpoint)
+    // Extract slug from URL if it's a competition
+    const compMatch = payload.url.match(/kaggle\.com\/competitions\/([a-z0-9-]+)/i);
+    const competitionSlug = compMatch ? compMatch[1] : null;
+
+    if (competitionSlug && !payload.token_file) {
+      // Use the new competition endpoint
+      response = await fetch(`${API_BASE}/api/competitions/${competitionSlug}`, {
+        method: 'GET',
+      });
+    } else if (payload.token_file) {
+      // Legacy/Private path with file upload
       const params = new URLSearchParams({
         url: payload.url,
         top_n: payload.top_n,
-        output_format: payload.output_format,
-        dry_run: payload.dry_run,
       });
 
       const formData = new FormData();
       formData.append('token_file', payload.token_file);
 
-      response = await fetch(`${API_BASE}/get-context-upload?${params.toString()}`, {
+      response = await fetch(`${API_BASE}/api/get-context-upload?${params.toString()}`, {
         method: 'POST',
         body: formData,
       });
     } else {
-      // No file: Use JSON body (new POST endpoint contract)
-      response = await fetch(`${API_BASE}/get-context`, {
+      // Generic context endpoint
+      response = await fetch(`${API_BASE}/api/get-context`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: payload.url,
           top_n: payload.top_n,
-          output_format: payload.output_format,
-          dry_run: payload.dry_run,
           stream: false
         }),
       });
     }
 
     if (!response.ok) {
-      let errorMsg = 'Unknown error';
-      try {
-        const errData = await response.json();
-        if (errData.detail) {
-          errorMsg = typeof errData.detail === 'string'
-            ? errData.detail
-            : JSON.stringify(errData.detail);
-        } else {
-          errorMsg = JSON.stringify(errData);
-        }
-      } catch {
-        errorMsg = response.statusText;
-      }
-      throw new Error(errorMsg);
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.detail || `Server error: ${response.status}`);
     }
 
-    // Return JSON response (Job ID)
     const data = await response.json();
-    return { success: true, ...data }; // data includes job_id, status, message
+    return { success: true, ...data };
 
   } catch (error) {
-    console.error("API Error:", error);
-    return { success: false, error: error.message };
+    let message = error.message;
+    if (message === 'Failed to fetch' || message.includes('NetworkError')) {
+      message = "Unable to connect to server. The backend might be offline.";
+    }
+    return { success: false, error: message };
   }
 }
 
-export async function pollJobStatus(jobId) {
+/**
+ * Search competitions
+ */
+export async function searchCompetitions(query) {
   try {
-    const res = await fetch(`${API_BASE}/jobs/${jobId}`);
-    if (!res.ok) throw new Error("Failed to check status");
-    return await res.json();
+    const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Search failed');
+    return await response.json();
   } catch (error) {
-    return { status: 'error', error: error.message };
+    console.error('Search error:', error);
+    return [];
   }
 }
 
-export function getJobDownloadUrl(jobId, format = 'txt') {
-  return `${API_BASE}/jobs/${jobId}/download?format=${format}`;
-}
-
+/**
+ * Check API health
+ */
 export async function checkHealth() {
   try {
     const res = await fetch(`${API_BASE}/health`);

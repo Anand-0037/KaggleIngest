@@ -6,12 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/get-context': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/jobs': {
+      '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
@@ -22,5 +17,17 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          utils: ['@tanstack/react-query', 'sonner']
+        }
+      }
+    },
+    // Minification options are enabled by default in Vite (esbuild)
+    minify: 'esbuild',
   }
 })

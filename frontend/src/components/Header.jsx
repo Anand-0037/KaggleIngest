@@ -7,11 +7,12 @@ const Header = () => {
 
   return (
     <div className={styles.header}>
-      <div className={styles.logoContainer}>
-        <img src="/logo.svg" alt="KI" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+      <a href="/" className={styles.logoContainer} style={{ textDecoration: 'none' }}>
+        <img src="/logo.svg" alt="KI" style={{ width: '28px', height: '28px', borderRadius: '6px' }} fetchPriority="high" />
         <span style={{ color: '#20BEFF' }}>Kaggle</span><span style={{ color: 'var(--color-text)' }}>Ingest</span>
-      </div>
+      </a>
       <div className={styles.navLinks}>
+
         {/* Theme Toggle */}
         <button onClick={toggleTheme} className="btn-icon" title="Toggle Theme" style={{ fontSize: '14px' }}>
           {theme === 'dark' ? (
@@ -28,7 +29,6 @@ const Header = () => {
         <a href="/llms.txt" target="_blank" className={styles.llmsLink}>
           /llms.txt
         </a>
-        <a href="https://github.com/Anand-0037/KaggleIngest" target="_blank" rel="noopener noreferrer" className={styles.githubLink}>GitHub</a>
       </div>
     </div>
   );

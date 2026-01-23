@@ -81,7 +81,7 @@ class ToonEncoder:
             return f"{name}{val}" if name else val
 
         keys = list(items[0].keys())
-        header = f"{name}{{{','.join(keys)}}}" if name else "{" + ",".join(keys) + "}"
+        header = f"{name}[{len(items)}]{{{','.join(keys)}}}" if name else "{" + ",".join(keys) + "}"
         rows = [
             ",".join(map(cls.encode_value, (it.get(k) for k in keys))) for it in items
         ]
@@ -241,7 +241,8 @@ class ToonDecoder:
         if text.startswith("[") and text.endswith("]"):
             return cls.parse_value(text)
 
-        header_re = re.compile(r"^([A-Za-z0-9_]+)?\{([^}]+)\}$", re.MULTILINE)
+        # Updated regex to handle optional list count: key[count]{fields}
+        header_re = re.compile(r"^([A-Za-z0-9_]+)?(?:\[\d+\])?\{([^}]+)\}$", re.MULTILINE)
         matches = list(header_re.finditer(text))
 
         if not matches:

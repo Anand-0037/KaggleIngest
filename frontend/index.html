@@ -9,12 +9,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#20BEFF" />
 
+    <!-- Performance Optimization -->
+    <link
+      rel="preload"
+      href="/logo.svg"
+      as="image"
+      type="image/svg+xml"
+      fetchpriority="high"
+    />
+
+    <!-- Security -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; img-src 'self' data: https://kaggleingest.com https://www.kaggle.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://kaggleingest.onrender.com http://localhost:8000;"
+    />
+
     <!-- SEO Meta Tags -->
-    <title>KaggleIngest - Kaggle to LLM Context</title>
+    <title>
+      KaggleIngest - Export Kaggle Competitions to LLM Context 
+    </title>
+    <link rel="canonical" href="https://kaggleingest.com/" />
     <meta
       name="description"
-      content="Win any Kaggle competition easily by digesting all competition metadata into a single file. Get help from your favorite LLMs in TOON format for fewer tokens."
+      content="Dominate Kaggle competitions by converting metadata, notebooks, and datasets into token-optimized LLM context. Boost your AI coding assistant with KaggleIngest."
     />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "KaggleIngest",
+            "operatingSystem": "Web",
+            "applicationCategory": "DeveloperApplication",
+            "description": "A tool to ingest Kaggle competition data and convert it into optimized context for Large Language Models.",
+            "url": "https://kaggleingest.com/",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Organization",
+            "name": "KaggleIngest",
+            "url": "https://kaggleingest.com",
+            "logo": "https://kaggleingest.com/logo.svg",
+            "sameAs": ["https://github.com/Anand-0038/kaggleingest"]
+          }
+        ]
+      }
+    </script>
     <meta
       name="keywords"
       content="kaggle, llm, context, ingestion, dataset, competition, machine learning, ai"

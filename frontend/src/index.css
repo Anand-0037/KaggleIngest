@@ -30,8 +30,9 @@
   font-weight: 400;
 
   /* Shadows */
-  --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.3);
-  /* Soft shadow */
+  /* Neo-Brutalist Shadows */
+  --shadow-card: 8px 8px 0px rgba(0, 0, 0, 0.8);
+  --shadow-button: 4px 4px 0px rgba(0, 0, 0, 0.5);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -93,13 +94,18 @@ a:hover {
 
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-card-border);
-  border-radius: 16px;
+  border: 3px solid var(--color-text);
+  border-radius: 4px;
   padding: 48px;
   box-shadow: var(--shadow-card);
   margin-bottom: 32px;
   position: relative;
-  transition: transform 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0px var(--color-primary);
 }
 
 @media (max-width: 768px) {
@@ -136,16 +142,19 @@ a:hover {
 .btn-primary {
   background-color: var(--color-button);
   color: var(--color-button-text);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
+  border: 2px solid var(--color-text);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-dark);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.8);
+}
+
+.btn-primary:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
 }
 
 @media (max-width: 480px) {
@@ -222,17 +231,16 @@ a:hover {
 input[type="text"] {
   width: 100%;
   padding: 14px 20px;
-  border: 1px solid var(--color-card-border);
-  border-radius: 24px;
-  /* Pill input */
+  border: 3px solid var(--color-text);
+  border-radius: 4px;
+  /* Brutalist square corners */
   font-size: 1rem;
   font-family: inherit;
   transition: all 0.2s ease;
   outline: none;
   background-color: var(--color-input-bg);
   color: var(--color-text);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
-  /* Inset shadow for depth */
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
 }
 
 input:focus {

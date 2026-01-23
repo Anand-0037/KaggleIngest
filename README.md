@@ -1,150 +1,124 @@
 # KaggleIngest
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
+> **The High-Performance Bridge Between Kaggle Data and LLMs.**
 
-> **Win any Kaggle competition easily by digesting all competition metadata into a single file.**
+KaggleIngest transforms complex Kaggle competitions, datasets, and notebooks into token-optimized context for AI assistants. It eliminates noise and intelligently ranks high-signal implementation patterns to help you win competitions faster.
 
-KaggleIngest transforms complex Kaggle competitions, datasets, and notebooks into high-quality, token-optimized context for Large Language Models. Get help from your favorite LLMs in TOON format for fewer tokens.
+## SaaS-First Architecture
 
-🌐 **Live Demo:** [https://kaggleingest.com](https://kaggleingest.com)
+We've evolved. KaggleIngest is now a production-ready SaaS platform built on a high-performance **PostgreSQL-as-Everything** architecture.
 
-## Project Structure
-
-```
-kaggleingest/
-├── frontend/           # React UI (Vite + TanStack Query)
-├── backend/            # FastAPI API Server
-└── chrome-extension/   # Browser extension for 1-click ingestion
-```
+- **Postgres-Only Stack**: Replaced SQLite/Redis with a unified PostgreSQL engine for state management, ranked search, and audit-compliant caching.
+- **API-First Security**: Robust `X-API-Key` authentication with tiered credit management and usage tracking.
+- **High-Performance Caching**: `UNLOGGED` caching layer for maximum write throughput during ingestion, ensuring zero-latency "hits" for popular competitions.
+- **Multi-Strategy Search**: full-text search (FTS) combined with trigram similarity for typo-tolerant, ranked results.
 
 ## Core Capabilities
 
-- **Smart Context Ranking**: Uses a custom scoring algorithm (`Log(Upvotes) * TimeDecay`) to prioritize high-quality, recent implementation patterns over stale kernels.
-- **Async Scalability**: Built on a robust `Redis` + `arq` backend to handle massive datasets and concurrent ingestion jobs without timeout risks.
-- **Multi-Format Output**:
-  - **`.toon` (Recommended)**: Token Optimized Object Notation. A JSON-like format that uses ~40% fewer tokens than standard JSON.
-  - **`.txt`**: Plain text, human-readable summary.
-  - **`.md`**: Markdown with syntax highlighting support.
-- **Robust Ingestion**: Hardened parsers for legacy `nbformat` v3, multi-encoding CSVs, and resilient error handling.
+- **Smart Context Ranking**: Custom scoring algorithm (`Log(Upvotes) * TimeDecay`) prioritizes recent, high-quality solution patterns.
+- **Token-Oriented Object Notation (TOON)**: A proprietary format that reduces token consumption while preserving structural metadata for LLMs.
+- **Dual-Track Ingestion**: Instant context for cached competitions; automated background fetching for new ones.
+- **Robust Parsing**: Hardened support for legacy `nbformat`, multi-encoding CSVs, and malformed datasets.
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Redis (optional, for async job processing)
-
-### Backend Setup
-
-```bash
-cd backend
-uv sync
-uv run uvicorn app:app --reload --port 8000
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will be available at `http://localhost:5173` and will proxy API requests to the backend.
-
-### Chrome Extension
-
-1. Go to `chrome://extensions/`
-2. Enable **Developer mode**
-3. Click **Load unpacked**
-4. Select the `chrome-extension` directory
-5. (Optional) Right-click the extension icon → **Options** to configure a custom backend URL
-
-## Development
-
-### Frontend Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues
-npm run format       # Format with Prettier
-npm run format:check # Check formatting
-npm run test:e2e     # Run Playwright tests
-```
-
-### Backend Scripts
-
-```bash
-uv run ruff check .        # Lint Python code
-uv run ruff format .       # Format Python code
-uv run mypy .              # Type check
-uv run pytest tests/ -v    # Run tests
-```
+---
 
 ## API Reference
 
-**Production:** `https://kaggleingest.onrender.com`
-**Local:** `http://localhost:8000`
+Base URL: `http://localhost:8000` (Local) | `https://api.kaggleingest.com` (Prod)
 
-### Submit Ingestion Job
+### 1. Authentication
+Create an account to get your personal `ki_...` API key.
+- `POST /auth/signup`
+- `GET /auth/me` (Check credits/tier)
 
-`POST /get-context`
+### 2. Search Competitions
+Ranked search across the entire Kaggle index.
+- `GET /search?query=titanic`
 
-```json
-{
-  "url": "https://www.kaggle.com/competitions/titanic",
-  "top_n": 20,
-  "output_format": "toon",
-  "dry_run": false
-}
+### 3. Get Competition Context
+Dual-track endpoint. Returns context instantly if cached, otherwise starts a background fetch.
+- `GET /competitions/{slug}`
+*Headers: `X-API-Key: YOUR_KEY`*
+
+---
+
+## Usage Examples
+
+### CLI (curl)
+```bash
+# 1. Signup and save API key
+API_KEY=$(curl -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com", "password":"securepass123"}' | jq -r .api_key)
+
+# 2. Search for a competition
+curl "http://localhost:8000/search?query=house-prices" -H "X-API-Key: $API_KEY"
+
+# 3. Get Context (Titanic)
+curl "http://localhost:8000/competitions/titanic" -H "X-API-Key: $API_KEY"
 ```
 
-### Poll Job Status
+### Python Integration
+```python
+import requests
 
-`GET /jobs/{job_id}`
+API_KEY = "ki_..."
+BASE_URL = "http://localhost:8000"
 
-### Download Result
+def get_kaggle_context(slug):
+    headers = {"X-API-Key": API_KEY}
+    response = requests.get(f"{BASE_URL}/competitions/{slug}", headers=headers)
 
-`GET /jobs/{job_id}/download`
+    data = response.json()
+    if data["status"] == "processing":
+        print("Metadata is being fetched. Check back in 60 seconds.")
+    else:
+        return data["formatted_output"]
+```
 
-## Architecture
+---
 
-| Component | Technology                    | Purpose                                          |
-| --------- | ----------------------------- | ------------------------------------------------ |
-| Frontend  | React + Vite + TanStack Query | User interface for job submission and monitoring |
-| Backend   | FastAPI + Redis + arq         | Async job processing and Kaggle API integration  |
-| Extension | Chrome Extension API          | 1-click ingestion from Kaggle pages              |
+## LLM System Prompt (TOON v2.0)
 
-## Security
+Copy this into your LLM prompt to help it interpret TOON results:
 
-- **Ephemeral Credentials**: User uploads (`kaggle.json`) are processed in memory and never stored permanently.
-- **Validation**: Strict file size limits and type checks on all inputs.
-- **Sandboxing**: Dockerized deployment ensures isolation.
+```text
+You are analyzing Kaggle competition context in TOON (Token-Oriented Object Notation) v2.0.
+Structure:
+- metadata: = Competition info (title, url, category, prize)
+- schema: = Dataset column definitions
+- sample_rows: = Data preview rows
+- notebooks[N]{fields}: = Top N notebooks with specified fields
+- content: = Full notebook text/code content
 
-## Contributing
+Guidelines:
+1. Prioritize patterns found in higher-ranked notebooks (top of list).
+2. Synthesize feature engineering techniques across multiple implementations.
+3. Validate your proposed models against the provided schema and sample data.
+```
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'feat: add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+---
 
-### Code Quality
+## Get Started Locally
 
-This project uses:
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/Anand-0037/KaggleIngest
+   cd KaggleIngest
+   ```
 
-- **ESLint + Prettier** for JavaScript/React
-- **ruff** for Python linting and formatting
-- **Playwright** for E2E testing
-- **GitHub Actions** for CI/CD
+2. **Backend Setup**:
+   ```bash
+   cd backend && uv sync
+   cp .env.example .env # Add your Postgres and Kaggle keys
+   uvicorn backend.app:app --reload
+   ```
 
-## License
+3. **Frontend Setup**:
+   ```bash
+   cd frontend && npm install
+   npm run dev
+   ```
 
-MIT License. Open source and free to use.
+---
+© 2026 KaggleIngest | Bridge the Context Gap.

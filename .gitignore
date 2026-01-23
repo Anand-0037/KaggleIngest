@@ -46,6 +46,23 @@ __pycache__/
 pip-log.txt
 pip-delete-this-directory.txt
 
+
+# Valid for both backend/frontend
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+coverage/
+.pytest_cache/
+backend/scripts/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
 # Virtual environments
 .venv/
 venv/
@@ -160,3 +177,6 @@ backend/docs/TOON_SPEC.md
 **/llms.txt
 promote/
 rules.md
+
+# Business / Company
+company/

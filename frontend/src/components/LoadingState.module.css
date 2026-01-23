@@ -1,0 +1,66 @@
+.loadingCard {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+    animation: pulse-border 2s infinite;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.skeletonBlock {
+    background: var(--color-background);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.skeletonLine {
+    height: 12px;
+    background: var(--color-border);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+    animation: pulse-opacity 1.5s infinite ease-in-out;
+}
+
+.skeletonLine.short { width: 40%; }
+.skeletonLine.medium { width: 70%; }
+.skeletonLine.long { width: 90%; }
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-opacity {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.15; }
+    100% { opacity: 0.3; }
+}
+
+@keyframes pulse-border {
+    0% { border-color: var(--color-border); }
+    50% { border-color: var(--color-primary); }
+    100% { border-color: var(--color-border); }
+}
