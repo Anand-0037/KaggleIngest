@@ -75,7 +75,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"], # Allow * for ease of dev, strict in prod
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://kaggleingest.com",
+        "https://www.kaggleingest.com",
+        "https://kaggle-ingest.vercel.app",
+        "https://kaggle-ingest-rho.vercel.app",
+        "*"
+    ], # Allow * for ease of dev, specific origins for prod safety recommended but Vercel previews are dynamic
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
