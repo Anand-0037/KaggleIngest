@@ -130,8 +130,8 @@ if not POSTGRES_URL:
         print("⚠️ WARNING: Using development database URL. Set POSTGRES_URL for production.")
 
 # Ensure asyncpg compatibility (remove ?channel_binding=require)
-if POSTGRES_URL and '?channel_binding' in POSTGRES_URL:
-    POSTGRES_URL = POSTGRES_URL.split('?channel_binding')[0]
+if POSTGRES_URL:
+    POSTGRES_URL = POSTGRES_URL.replace('?channel_binding=require', '?').replace('&channel_binding=require', '')
 
 if POSTGRES_URL and 'sslmode' not in POSTGRES_URL and 'localhost' not in POSTGRES_URL:
      POSTGRES_URL += '?sslmode=require'
