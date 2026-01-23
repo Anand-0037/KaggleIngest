@@ -5,6 +5,7 @@ const Footer = () => {
   return (
     <footer className={styles.footer}>
       <div className={styles.divider}></div>
+      <p className={styles.copyright} style={{textAlign: 'center', color: 'var(--color-text-dim)', fontSize: '0.8rem', margin: '1rem 0'}}>&copy; 2026 KaggleIngest v1.1</p>
         <div className={styles.socialLinks}>
           <a
             href="https://github.com/Anand-0037"
