@@ -161,6 +161,36 @@ async def search_competitions(
         raise HTTPException(status_code=500, detail="Search failed")
 
 
+
+# ------------------------------------------------------------------------------
+# LEGACY ROUTES (For backwards compatibility with stale Vercel frontend)
+# ------------------------------------------------------------------------------
+@app.post("/get-context", response_model=CompetitionResponse, tags=["Legacy"])
+async def legacy_get_context(
+    request: IngestRequest,
+    background_tasks: BackgroundTasks,
+    db: asyncpg.Pool = Depends(get_db)
+):
+    """
+    Alias for /api/get-context to support older frontends.
+    """
+    logger.warning(f"⚠️ Legacy /get-context called for {request.url}")
+    return await get_context(request, background_tasks, db)
+
+@app.post("/get-context-upload", response_model=CompetitionResponse, tags=["Legacy"])
+async def legacy_get_context_upload(
+    background_tasks: BackgroundTasks,
+    url: str = Form(...),
+    top_n: int = Form(3),
+    token_file: UploadFile = File(...),
+    db: asyncpg.Pool = Depends(get_db)
+):
+    """
+    Alias for /api/get-context-upload to support older frontends.
+    """
+    return await get_context_upload(background_tasks, url, top_n, token_file, db)
+# ------------------------------------------------------------------------------
+
 from fastapi import BackgroundTasks, UploadFile, File, Form
 from backend.api.competitions import CompetitionResponse, fetch_and_cache_competition, IngestRequest
 
