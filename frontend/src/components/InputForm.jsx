@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styles from './InputForm.module.css';
 
-function InputForm({ onSubmit, isLoading, status, initialUrl }) {
+function InputForm({ onSubmit, isLoading, initialUrl }) {
   const [url, setUrl] = useState(initialUrl || '');
   const [error, setError] = useState('');
 
@@ -19,9 +19,7 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
   const fileInputRef = useRef(null);
 
   const [options, setOptions] = useState({
-    top_n: 3,
-    output_format: 'toon',
-    dry_run: false
+    top_n: 3
   });
 
   // Handle initial URL from parent (auto-ingest) - using state adjustment during render
@@ -39,10 +37,15 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
   };
 
   const validateUrl = (inputUrl) => {
-    // Allow underscores, dots in slugs, and optional query params
-    const kaggleRegex = /^https:\/\/(www\.)?kaggle\.com\/(competitions|datasets|code)\/[\w.-]+(\/[\w.-]+)*\/?(\?.*)?$/;
-    if (!inputUrl.match(kaggleRegex)) {
+    // Robust Kaggle URL validation (competitions, datasets, kernels/code)
+    const kaggleRegex = /^https:\/\/(www\.)?kaggle\.com\/([a-z0-9-]+)\/([a-z0-9.-]+)(\/[a-z0-9.-]+)*\/?(\?.*)?$/i;
+    const match = inputUrl.match(kaggleRegex);
+    if (!match) {
       return "Please enter a valid Kaggle Competition, Dataset, or Notebook URL.";
+    }
+    const type = match[2];
+    if (!['competitions', 'datasets', 'code', 'kernels', 'c'].includes(type)) {
+      return "Unsupported Kaggle resource type. Please provide a Competition, Dataset, or Notebook.";
     }
     return null;
   };
@@ -51,14 +54,14 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
     e.preventDefault();
     if (!url) return;
 
-    const validationError = validateUrl(url);
+    const validationError = validateUrl(url.trim());
     if (validationError) {
       setError(validationError);
       return;
     }
     setError('');
-    addToHistory(url);
-    onSubmit({ url, ...options, token_file: tokenFile });
+    addToHistory(url.trim());
+    onSubmit({ url: url.trim(), ...options, token_file: tokenFile });
   };
 
   const handleFileChange = (e) => {
@@ -91,42 +94,22 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
 
   const getButtonText = () => {
     if (isLoading) {
-      if (status?.progress) {
-        const { processed, total } = status.progress;
-        return `Processing ${processed}/${total}...`;
-      }
-      return 'Processing...';
+      return 'Ingesting Context...';
     }
     return 'Ingest Context';
   };
 
   return (
-    <div className={styles.heroSection} style={{ padding: '20px 0', marginBottom: '20px' }}>
-      <h1 className={styles.heroTitle} style={{ fontSize: '2rem', marginBottom: '8px' }}>
+    <div className={styles.heroSection}>
+      <h1 className={styles.heroTitle}>
         Welcome to <span style={{ color: 'var(--color-primary)' }}>Kaggle</span>Ingest
       </h1>
 
-      <p className={styles.heroSubtitle} style={{ fontSize: '1rem', margin: 0 }}>
-        Win Kaggle Competitions Faster — Full Context for Your AI.
+      <p className={styles.heroSubtitle}>
+        Bridge the gap between Kaggle's vast data and your favorite AI coding assistant. KaggleIngest transforms complex competition metadata into a single, token-optimized context file.
       </p>
 
       <div className={styles.card}>
-        {isLoading && status?.progress && (
-          <div style={{ marginBottom: '16px', width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', color: '#666' }}>
-              <span>Progress</span>
-              <span>{status.progress.percent}%</span>
-            </div>
-            <div style={{ height: '6px', background: '#eee', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                width: `${status.progress.percent}%`,
-                background: 'var(--color-primary)',
-                transition: 'width 0.5s ease'
-              }} />
-            </div>
-          </div>
-        )}
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputWrapper}>
             <input
@@ -149,22 +132,10 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
           </button>
         </form>
 
-        {/* Options */}
+        {/* Options - Notebook Count Only */}
         <div className={styles.optionsRow}>
-          <label className={styles.optionLabel}>
-            <span>Output Format</span>
-            <select
-              value={options.output_format}
-              onChange={(e) => setOptions({ ...options, output_format: e.target.value })}
-              disabled={isLoading}
-              className={styles.select}
-            >
-              <option value="toon">TOON (.toon)</option>
-              <option value="txt">Text (.txt)</option>
-            </select>
-          </label>
-          <label className={styles.optionLabel}>
-            <span>Notebooks</span>
+          <div className={styles.optionLabel}>
+            <span>Notebooks to Analyze</span>
             <div className={styles.numberWrapper}>
               <button
                 type="button"
@@ -192,44 +163,46 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
                 +
               </button>
             </div>
-          </label>
+          </div>
         </div>
 
         {/* File Upload */}
         <div className={styles.fileUploadSection}>
-          <button type="button" onClick={() => setShowFileUpload(!showFileUpload)} className={styles.fileToggle}>
+          <button type="button" onClick={() => setShowFileUpload(!showFileUpload)} className={styles.fileToggle} style={{ color: showFileUpload ? 'var(--color-text-secondary)' : 'var(--color-primary)' }}>
             {showFileUpload ? '− Hide Credentials' : '+ Add Private Credentials (kaggle.json)'}
           </button>
           {showFileUpload && (
             <div className={styles.fileInputWrapper}>
-              <p style={{ marginBottom: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                Upload <code>kaggle.json</code> to access your private competitions/datasets.
+              <p style={{ marginBottom: '12px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.4' }}>
+                Upload <code>kaggle.json</code> to access your private competitions and datasets.
+                <span style={{ display: 'block', marginTop: '4px', opacity: 0.7 }}>We never store your keys.</span>
               </p>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-                style={{ fontSize: '14px' }}
-              />
-              {tokenFile && <p style={{ marginTop: '8px', fontSize: '13px', color: 'var(--color-success)' }}>✓ {tokenFile.name}</p>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  style={{ fontSize: '13px' }}
+                />
+                {tokenFile && <span style={{ fontSize: '13px', color: 'var(--color-success)', fontWeight: '500' }}>✓ {tokenFile.name}</span>}
+              </div>
             </div>
           )}
         </div>
 
-        {/* History */}
-        {/* Two-column layout for History and Features */}
+        {/* History and Discovery */}
         <div className={styles.gridContainer}>
 
-          {/* Left Col: History & Quick Start */}
-          <div className={styles.historySection} style={{ marginTop: 0 }}>
+          {/* Left Col: History & Discovery */}
+          <div className={styles.discoverySection}>
             {recentJobs.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <p className={styles.sectionTitle} style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Your History</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <p className={styles.sectionTitle}>Your History</p>
+                <div className={styles.pillCloud}>
                   {recentJobs.slice(0, 3).map((j, i) => (
-                    <button key={i} type="button" className={styles.examplePill} onClick={() => loadExample(j)} title={j} style={{ fontSize: '13px', padding: '6px 12px' }}>
-                      {j.replace('https://www.kaggle.com/', '').split('/').pop()}
+                    <button key={i} type="button" className={styles.examplePill} onClick={() => loadExample(j)} title={j}>
+                      {j.replace('https://www.kaggle.com/', '').split('/').pop().split('?')[0]}
                     </button>
                   ))}
                 </div>
@@ -237,31 +210,61 @@ function InputForm({ onSubmit, isLoading, status, initialUrl }) {
             )}
 
             <div>
-              <p className={styles.sectionTitle} style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Try These Competitions</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/titanic')} style={{ fontSize: '13px', padding: '6px 12px' }}>Titanic</button>
-                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques')} style={{ fontSize: '13px', padding: '6px 12px' }}>House Prices</button>
-                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/digit-recognizer')} style={{ fontSize: '13px', padding: '6px 12px' }}>Digit Recognizer</button>
-                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/store-sales-time-series-forecasting')} style={{ fontSize: '13px', padding: '6px 12px' }}>Store Sales</button>
-                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/nlp-getting-started')} style={{ fontSize: '13px', padding: '6px 12px' }}>NLP Disaster Tweets</button>
+              <p className={styles.sectionTitle}>Try These Competitions</p>
+              <div className={styles.pillCloud}>
+                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/titanic')}>Titanic</button>
+                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques')}>House Prices</button>
+                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/digit-recognizer')}>Digit Recognizer</button>
+                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/store-sales-time-series-forecasting')}>Store Sales</button>
+                <button type="button" className={styles.examplePill} onClick={() => loadExample('https://www.kaggle.com/competitions/nlp-getting-started')}>NLP Disaster Tweets</button>
               </div>
             </div>
           </div>
 
-          {/* Right Col: Features */}
+          {/* Right Col: Capabilities */}
           <div className={styles.featuresCard}>
-            <p className={styles.sectionTitle} style={{ marginBottom: '10px', fontSize: '11px' }}>Capabilities</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)' }}>• Feed context to ChatGPT/Claude</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)' }}>• Learn from top notebooks</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)' }}>• Jumpstart your submission</span>
+            <p className={styles.sectionTitle}>Capabilities</p>
+            <ul className={styles.featureList}>
+              <li>Feed context to ChatGPT/Claude</li>
+              <li>Learn from top notebooks</li>
+              <li>Jumpstart your submission</li>
+            </ul>
+            <div className={styles.toonBox}>
+              <span className={styles.toonLabel}>LLM Optimized</span> — <a href="https://github.com/toon-format/toon" target="_blank" rel="noopener noreferrer" className={styles.toonLink}>TOON</a> saves tokens
             </div>
-            <p style={{ marginTop: '12px', fontSize: '10px', color: 'var(--color-text-secondary)', borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
-              <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>LLM Optimized</span> — <a href="/toon.html" target="_blank" style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>TOON</a> saves tokens
-            </p>
           </div>
         </div>
       </div>
+
+      {/* SEO Content Section */}
+      <section className={styles.seoContent}>
+        <h2 className={styles.sectionHeader}>How KaggleIngest Works</h2>
+        <div className={styles.contentGrid}>
+          <div className={styles.contentCard}>
+            <h3>1. Intelligent Ingestion</h3>
+            <p>
+              Paste any Kaggle URL — whether it's a <strong>competition</strong>, a <strong>dataset</strong>, or a <strong>notebook (kernel)</strong>. Our backend identifies the resource and prepares to crawl the most relevant metadata, including overview descriptions, evaluation metrics, and discussion themes.
+            </p>
+          </div>
+          <div className={styles.contentCard}>
+            <h3>2. Top Notebook Analysis</h3>
+            <p>
+              Don't just look at the data; learn from the best. KaggleIngest can analyze the top performing notebooks for any competition. It extracts high-level code patterns, preprocessing steps, and model architectures, giving your AI assistant the deep insight it needs to generate winning code.
+            </p>
+          </div>
+          <div className={styles.contentCard}>
+            <h3>3. TOON Format Optimization</h3>
+            <p>
+              Context is expensive. Large datasets can easily overflow an LLM's context window. We use the <strong>TOON (Token Optimized Object Notation)</strong> format to drastically reduce token usage without losing critical information. This ensures you can fit more historical context and structural metadata into every prompt.
+            </p>
+          </div>
+        </div>
+
+        <h2 className={styles.sectionHeader}>Why use LLM Context for Kaggle?</h2>
+        <p className={styles.longText}>
+          Traditional coding assistants struggle with the specific constraints and hidden details of Kaggle competitions. By providing a curated <strong>LLM context</strong>, you allow models like GPT-4, Claude 3.5, or Gemini 1.5 Pro to understand the competition's unique evaluation metric, the underlying data structure, and the community's best practices. This leads to fewer hallucinations, better feature engineering suggestions, and a significantly faster iteration cycle. Whether you are aiming for a Gold medal or just getting started with a new dataset, KaggleIngest is your shortcut to professional-grade machine learning workflows.
+        </p>
+      </section>
     </div>
   );
 }

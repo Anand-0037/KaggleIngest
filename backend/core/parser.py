@@ -16,7 +16,7 @@ except ImportError:
     import json
     _use_orjson = False
 
-from logger import get_logger
+from backend.logger import get_logger
 
 from .models import ColumnInfo, DatasetFileSchema, NotebookContent
 
@@ -27,8 +27,8 @@ logger = get_logger(__name__)
 try:
     # 10MB limit
     csv.field_size_limit(10 * 1024 * 1024)
-except Exception:
-    pass
+except Exception as e:
+    logger.warning(f"Could not set CSV field size limit (ignoring): {e}")
 
 # Precompiled regex patterns for performance
 EXCESS_NEWLINES_RE = re.compile(r'\n{3,}')
@@ -184,7 +184,8 @@ def _parse_csv_with_encoding(csv_path: str, filename: str, max_sample_rows: int,
                 return None
             headers = [f"col_{i}" for i in range(len(first_row))]
             f.seek(0)
-            next(reader)  # Skip first row again after seek
+            # Do NOT call next(reader) here, as it would skip the first data row
+            # which we need for sample_rows.
 
         # Read sample rows
         sample_rows = []
@@ -200,8 +201,7 @@ def _parse_csv_with_encoding(csv_path: str, filename: str, max_sample_rows: int,
                 break
 
         if not sample_rows:
-            # It's possible to have headers but no data, which is valid schema
-            pass
+            logger.info(f"CSV file {filename} has no data rows (header only).")
 
         # Infer types from first data row
         def infer_dtype(val: str) -> str:
@@ -215,7 +215,7 @@ def _parse_csv_with_encoding(csv_path: str, filename: str, max_sample_rows: int,
                 float(val)
                 return "float"
             except ValueError:
-                pass
+                logger.debug(f"Value '{val}' is not a float.")
             # Check boolean
             if val.lower() in ('true', 'false'):
                 return "boolean"

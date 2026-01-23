@@ -1,0 +1,101 @@
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--color-background, #202124);
+}
+
+.errorCard {
+  background: var(--color-surface, #2d3035);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.errorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.errorTitle {
+  color: var(--color-text, #e8eaed);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.errorMessage {
+  color: var(--color-text-secondary, #9aa0a6);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+.errorDetails {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #9aa0a6);
+}
+
+.errorDetails summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: var(--color-text, #e8eaed);
+}
+
+.errorDetails pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 8px 0 0 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.primaryButton {
+  background: var(--color-primary, #20beff);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-hover, #1aa8e6);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--color-text, #e8eaed);
+  border: 1px solid var(--color-border, #3c4043);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-text-secondary, #9aa0a6);
+}

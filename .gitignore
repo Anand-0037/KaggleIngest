@@ -46,12 +46,27 @@ __pycache__/
 pip-log.txt
 pip-delete-this-directory.txt
 
+
+# Valid for both backend/frontend
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+coverage/
+.pytest_cache/
+backend/scripts/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
 # Virtual environments
 .venv/
 venv/
 ENV/
 env/
-.env.local
 .env.*.local
 
 # Testing
@@ -79,7 +94,6 @@ MANIFEST
 # IDE / Editors
 # ---------------------
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -119,7 +133,6 @@ logs/
 # ---------------------
 # Secrets / Credentials
 # ---------------------
-.env
 *.env
 !.env.example
 kaggle.json
@@ -160,3 +173,7 @@ backend/docs/TOON_SPEC.md
 **/llms.txt
 promote/
 rules.md
+
+# Business / Company
+company/
+config.bat

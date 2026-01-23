@@ -1,13 +1,26 @@
-# Configuration and Environment Settings
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in the same directory as this file
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 # API Configuration
 API_TITLE = "KaggleIngest API"
 API_VERSION = "5.0.0"  # Single source of truth for version
 
 # Supported output formats
-SUPPORTED_OUTPUT_FORMATS = ["txt", "toon"]
+# Output format (TOON only for token efficiency)
 DEFAULT_OUTPUT_FORMAT = "toon"
+
+# Popular competitions for warm caching
+POPULAR_COMPETITIONS = [
+    "titanic",
+    "house-prices-advanced-regression-techniques",
+    "digit-recognizer",
+    "store-sales-time-series-forecasting",
+    "nlp-getting-started"
+]
 
 
 # CORS Settings - load from environment or use secure defaults
@@ -63,10 +76,13 @@ SECURE_HEADERS = {
 # Rate limiting (requests per minute)
 RATE_LIMIT = int(os.getenv("RATE_LIMIT", "20"))  # Default: 20 requests per minute
 
+# Concurrency limits
+LIMIT_CONCURRENT_DOWNLOADS = int(os.getenv("LIMIT_CONCURRENT_DOWNLOADS", "5"))
+
 # Notebook limits
 MIN_NOTEBOOKS = 1
-MAX_NOTEBOOKS = 50
-DEFAULT_NOTEBOOKS = 10
+MAX_NOTEBOOKS = 10  # Hard limit for caching efficiency
+DEFAULT_NOTEBOOKS = 3
 
 # Dataset schema limits
 try:
@@ -76,18 +92,95 @@ except (ValueError, TypeError):
 
 MAX_SAMPLE_ROWS = 10
 
-# Timeout settings (seconds)
-try:
-    SUBPROCESS_TIMEOUT = int(os.getenv("SUBPROCESS_TIMEOUT", "300"))
-except (ValueError, TypeError):
-    SUBPROCESS_TIMEOUT = 300  # 5 minutes
 
 # Logging configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+# Kaggle Credentials
+KAGGLE_USERNAME = os.getenv("KAGGLE_USERNAME")
+KAGGLE_KEY = os.getenv("KAGGLE_KEY")
+
 # Output file settings
 DEFAULT_OUTPUT_FILE = "context_output.txt"
 
-# Job Queue Configuration (Redis)
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-JOB_TIMEOUT = 600  # 10 minutes for job execution
+# Strict Environment Validation
+missing_keys = []
+if not KAGGLE_USERNAME: missing_keys.append("KAGGLE_USERNAME")
+if not KAGGLE_KEY: missing_keys.append("KAGGLE_KEY")
+
+if missing_keys and os.getenv("ENV") == "production":
+    raise RuntimeError(f"❌ CRITICAL: Missing required environment variables: {', '.join(missing_keys)}")
+elif missing_keys:
+    print(f"⚠️  WARNING: Missing credentials {missing_keys}. Kaggle API calls will fail.")
+
+
+# PostgreSQL Connection
+# SECURITY: Never hardcode production credentials
+POSTGRES_URL = os.getenv('POSTGRES_URL') or os.getenv('DATABASE_URL')
+
+if not POSTGRES_URL:
+    if os.getenv("ENV") == "production":
+        raise RuntimeError("❌ CRITICAL: POSTGRES_URL must be set in production")
+    else:
+        # Development fallback - local PostgreSQL or in-memory mode
+        POSTGRES_URL = os.getenv(
+            'DATABASE_URL_DEV',
+            'postgresql://postgres:postgres@localhost:5432/kaggleingest_dev'
+        )
+        print("⚠️ WARNING: Using development database URL. Set POSTGRES_URL for production.")
+
+# Ensure asyncpg compatibility (remove ?channel_binding=require)
+if POSTGRES_URL and '?channel_binding' in POSTGRES_URL:
+    POSTGRES_URL = POSTGRES_URL.split('?channel_binding')[0]
+
+if POSTGRES_URL and 'sslmode' not in POSTGRES_URL and 'localhost' not in POSTGRES_URL:
+     POSTGRES_URL += '?sslmode=require'
+
+DATABASE_URL = POSTGRES_URL  # Alias for backward compatibility
+
+# Resource-specific TTLs (Seconds) - 30 days for monthly refresh
+TTL_NOTEBOOK = 259200      # 3 days (notebooks can change more frequently)
+TTL_COMPETITION = 2592000  # 30 days
+TTL_DATASET = 2592000      # 30 days
+
+# Data Quality: Default Ignore Patterns
+# These match standard .gitignore syntax via pathspec
+DEFAULT_IGNORE_PATTERNS = [
+    # System & Environment
+    "__pycache__/", "*.pyc", "*.pyo", "*.pyd",
+    ".git/", ".svn/", ".hg/",
+    ".DS_Store", "Thumbs.db",
+    "node_modules/", "venv/", ".venv/", "env/",
+
+    # Locfiles (context noise)
+    "package-lock.json", "yarn.lock", "uv.lock", "poetry.lock", "Pipfile.lock",
+
+    # Images & Media
+    "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.ico", "*.svg",
+    "*.mp4", "*.mov", "*.avi", "*.mp3", "*.wav",
+
+    # Archives & Binaries
+    "*.zip", "*.tar", "*.gz", "*.rar", "*.7z", "*.whl",
+    "*.exe", "*.dll", "*.so", "*.dylib", "*.bin",
+
+    # Large Data Files (unless explicitly requested, usually noise for code context)
+    "*.csv", "*.tsv", "*.jsonl", "*.parquet", "*.pkl", "*.h5", "*.npy", "*.pt", "*.pth", "*.onnx",
+    "*.db", "*.sqlite", "*.sqlite3",
+
+    # Documents
+    "*.pdf", "*.doc", "*.docx", "*.xls", "*.xlsx", "*.ppt", "*.pptx",
+]
+
+# Observability
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+SENTRY_ENABLED = SENTRY_DSN is not None
+PROMETHEUS_ENABLED = os.getenv("PROMETHEUS_ENABLED", "True").lower() == "true"
+PROMETHEUS_METRICS_PATH = "/metrics"
+
+# Storage Settings
+STORAGE_STRATEGY = os.getenv("STORAGE_STRATEGY", "local").lower() # "local" or "s3"
+S3_BUCKET = os.getenv("S3_BUCKET", "kaggleingest-results")
+S3_ENDPOINT = os.getenv("S3_ENDPOINT") # For MinIO compatibility
+S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
+S3_REGION = os.getenv("S3_REGION", "us-east-1")

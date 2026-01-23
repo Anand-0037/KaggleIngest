@@ -1,99 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { getJobDownloadUrl } from '../services/api';
-import { useTheme } from '../context/ThemeContext';
+import React, { useState, useMemo } from 'react';
 import styles from './ResultViewer.module.css';
 
+import { toast } from 'sonner';
+
 export default function ResultViewer({ result, onDownload }) {
-  // Preview State
-  const [previewContent, setPreviewContent] = useState(null);
-  const [fullContent, setFullContent] = useState(null); // Store full content for "Load More"
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [isTruncated, setIsTruncated] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showFull, setShowFull] = useState(false);
 
-  const PREVIEW_LIMIT = 200000; // 200KB before truncation
+  // ... (keep constants)
 
-  // Reset preview state when job_id changes (new result)
-  const { job_id } = result || {};
-  useEffect(() => {
-    setPreviewContent(null);
-    setFullContent(null);
-    setShowPreview(false);
-    setIsTruncated(false);
-  }, [job_id]);
+  const PREVIEW_LIMIT = 50000;
 
-  // Theme context available if needed
-  useTheme();
+  const { metadata, formatted_output, toon_content } = result || {};
+  const content = toon_content || formatted_output;
 
-  const { metadata, stats = {} } = result || {};
+  // ... (keep useMemos)
 
-  // MOVED: Copy Feedback State moved up to be unconditional
-  const [copiedId, setCopiedId] = useState(null);
+  const { fullContent, isTruncated } = useMemo(() => {
+    if (!content) {
+      return { fullContent: null, isTruncated: false };
+    }
+
+    const isTrunc = content.length > PREVIEW_LIMIT;
+    return {
+      fullContent: content,
+      isTruncated: isTrunc
+    };
+  }, [content]);
+
+  const previewContent = useMemo(() => {
+    if (!fullContent) return null;
+    if (showFull || !isTruncated) return fullContent;
+    return fullContent.substring(0, PREVIEW_LIMIT);
+  }, [fullContent, showFull, isTruncated]);
+
 
   if (!result || !result.success) return null;
 
-  const handlePreview = async () => {
-    if (showPreview) {
-      setShowPreview(false);
-      return;
-    }
-
-    setShowPreview(true);
-    if (previewContent) return; // Already fetched
-
-    setIsPreviewLoading(true);
-    try {
-      const url = getJobDownloadUrl(job_id, 'txt');
-      const res = await fetch(url);
-      const text = await res.text();
-      setFullContent(text);
-
-      // Only truncate if over 200KB
-      if (text.length > PREVIEW_LIMIT) {
-        setPreviewContent(text.substring(0, PREVIEW_LIMIT));
-        setIsTruncated(true);
-      } else {
-        setPreviewContent(text);
-        setIsTruncated(false);
-      }
-    } catch {
-      setPreviewContent("Failed to load preview.");
-    } finally {
-      setIsPreviewLoading(false);
-    }
-  };
-
-
-  const handleCopy = async (id, appName, url = null) => {
-    let textToCopy = fullContent || previewContent;
-
-    if (!textToCopy) {
-      try {
-        const fetchUrl = getJobDownloadUrl(job_id, 'txt');
-        const res = await fetch(fetchUrl);
-        textToCopy = await res.text();
-      } catch {
-        alert('Failed to load content for copying.');
-        return;
-      }
-    }
+  const handleCopy = async () => {
+    const textToCopy = fullContent || content;
+    if (!textToCopy) return;
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      setCopiedId(id);
-
-      // Clear feedback after 2s
-      setTimeout(() => setCopiedId(null), 2000);
-
-      // Optional: Open external URL
-      if (url) {
-        setTimeout(() => window.open(url, '_blank'), 500);
-      }
+      setCopied(true);
+      toast.success('Context copied to clipboard!', {
+        description: `${Math.round(textToCopy.length / 1024)}KB ready for LLM.`
+      });
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API not available (e.g., insecure context)
-      alert('Clipboard access denied. Please use HTTPS or copy manually.');
+      toast.error('Failed to copy', {
+        description: 'Please use HTTPS or copy manually.'
+      });
     }
   };
+
+  const handleLoadMore = () => {
+    setShowFull(true);
+  };
+
+  const tokenCount = fullContent ? Math.round(fullContent.length / 4) : 0;
 
   return (
     <div className="card">
@@ -102,134 +68,120 @@ export default function ResultViewer({ result, onDownload }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ marginRight: '12px' }}>
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Job Completed
+          Context Ready
         </h2>
         <div className={styles.actionButtons}>
-          <button onClick={handlePreview} className="btn" style={{
-            background: 'var(--color-primary)',
-            border: 'none',
-            color: 'var(--color-button-text)',
-            fontSize: '13px',
-            fontWeight: '700'
-          }}>
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </button>
-
-          <button onClick={() => onDownload('txt')} className="btn" style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text)',
-            fontSize: '13px',
-            fontWeight: '500'
-          }}>
-            Download .txt
-          </button>
-          <button onClick={() => onDownload('toon')} className="btn" style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text)',
-            fontSize: '13px',
-            fontWeight: '500'
-          }}>
+          <button
+            onClick={onDownload}
+            className="btn"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+              fontSize: '13px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
             Download .toon
           </button>
           <button
-            onClick={() => handleCopy('main')}
+            onClick={handleCopy}
             className="btn"
             style={{
-              background: copiedId === 'main' ? 'var(--color-success)' : 'var(--color-primary)',
+              background: copied ? 'var(--color-success)' : 'var(--color-primary)',
               color: 'var(--color-button-text)',
               fontWeight: '600',
               border: 'none',
-              minWidth: '140px'
+              minWidth: '160px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
             }}
           >
-            {copiedId === 'main' ? '✓ Copied!' : 'Copy to Clipboard'}
+            {copied ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Context
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Export to LLM buttons */}
-      <div className={styles.exportSection}>
-        <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', marginRight: '8px' }}>Export to:</span>
-        <button onClick={() => handleCopy('gpt', 'ChatGPT', 'https://chat.openai.com')} className="btn" style={{ background: copiedId === 'gpt' ? 'var(--color-success)' : '#10a37f', color: 'white', fontSize: '12px', padding: '6px 12px', border: 'none', transition: 'background 0.2s' }}>
-          {copiedId === 'gpt' ? '✓ Copied' : 'ChatGPT'}
-        </button>
-        <button onClick={() => handleCopy('claude', 'Claude', 'https://claude.ai')} className="btn" style={{ background: copiedId === 'claude' ? 'var(--color-success)' : '#d97706', color: 'white', fontSize: '12px', padding: '6px 12px', border: 'none', transition: 'background 0.2s' }}>
-          {copiedId === 'claude' ? '✓ Copied' : 'Claude'}
-        </button>
-        <button onClick={() => handleCopy('gemini', 'Gemini', 'https://gemini.google.com')} className="btn" style={{ background: copiedId === 'gemini' ? 'var(--color-success)' : '#4285f4', color: 'white', fontSize: '12px', padding: '6px 12px', border: 'none', transition: 'background 0.2s' }}>
-          {copiedId === 'gemini' ? '✓ Copied' : 'Gemini'}
-        </button>
-        <button onClick={() => handleCopy('perplexity', 'Perplexity', 'https://www.perplexity.ai')} className="btn" style={{ background: copiedId === 'perplexity' ? 'var(--color-success)' : '#6366f1', color: 'white', fontSize: '12px', padding: '6px 12px', border: 'none', transition: 'background 0.2s' }}>
-           {copiedId === 'perplexity' ? '✓ Copied' : 'Perplexity'}
-        </button>
-      </div>
-
       <div className={styles.resultBody}>
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '20px', margin: '0 0 8px 0', color: 'var(--color-text)', fontWeight: '600' }}>{metadata?.title || 'Unknown Resource'}</h3>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)', wordBreak: 'break-all' }}>
-            <a href={metadata?.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)' }}>{metadata?.url}</a>
+        <div style={{ marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '18px', margin: '0 0 8px 0', color: 'var(--color-text)', fontWeight: '600' }}>
+            {metadata?.title || 'Competition Context'}
+          </h3>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)', wordBreak: 'break-all' }}>
+            <a href={metadata?.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)' }}>
+              {metadata?.url}
+            </a>
           </p>
         </div>
 
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <strong className={styles.statLabel}>Notebooks</strong>
-            <span className={styles.statValue}>{stats?.total_requested || 0}</span>
+        {/* Preview Section with Token Count */}
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
+          <div className={styles.previewTop} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h4 style={{ fontSize: '13px', color: 'var(--color-text-secondary)', textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              Preview
+            </h4>
+            <span style={{
+              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              background: 'var(--color-primary)',
+              color: 'white',
+              fontWeight: '600'
+            }}>
+              ~{tokenCount.toLocaleString()} tokens
+            </span>
           </div>
-          <div className={styles.statCard}>
-            <strong className={styles.statLabel}>Processed</strong>
-            <span className={styles.statValue} style={{ color: 'var(--color-success)' }}>{stats?.successful_downloads || 0}</span>
-          </div>
-          <div className={styles.statCard}>
-            <strong className={styles.statLabel}>Time</strong>
-            <span className={styles.statValue}>{stats.elapsed_time !== undefined ? stats.elapsed_time.toFixed(2) + 's' : '-'}</span>
-          </div>
-        </div>
 
-        {/* Preview Section */}
-        {showPreview && (
-          <div style={{ marginTop: '32px', borderTop: '1px solid var(--color-border)', paddingTop: '24px' }}>
-            <div className={styles.previewTop}>
-              <h4 style={{ fontSize: '14px', color: 'var(--color-text-secondary)', textTransform: 'uppercase', margin: 0 }}>File Preview</h4>
-              {previewContent && !isPreviewLoading && (
-                <span style={{
-                  fontSize: '12px',
-                  padding: '4px 8px',
-                  borderRadius: '12px',
-                  background: 'var(--color-button)',
-                  color: 'var(--color-button-text)',
-                  fontWeight: '600'
-                }}>
-                  ~{Math.round(previewContent.length / 4).toLocaleString()} Tokens
-                </span>
+          <div className={styles.codeContainer}>
+            <pre className={styles.codePre} style={showFull ? { maxHeight: 'none' } : {}}>
+              {previewContent !== null && previewContent !== undefined ? previewContent : (
+                  <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                      {metadata ? "Preview not available for this resource." : "Loading..."}
+                  </span>
               )}
-            </div>
-
-            {isPreviewLoading ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading preview...</div>
-            ) : (
-              <div className={styles.codeContainer}>
-                <pre className={styles.codePre}>
-                  {previewContent || "Click 'Terminal Preview' to load content"}
-                </pre>
-                {isTruncated && (
-                  <div style={{ padding: '16px', textAlign: 'center', borderTop: '1px solid var(--color-border)' }}>
-                    <button
-                      onClick={() => { setPreviewContent(fullContent); setIsTruncated(false); }}
-                      className="btn"
-                      style={{ background: 'var(--color-primary)', color: 'white', padding: '8px 24px' }}
-                    >
-                      Load Full Content ({Math.round(fullContent.length / 1024)}KB)
-                    </button>
-                  </div>
-                )}
+            </pre>
+            {isTruncated && !showFull && (
+              <div style={{ padding: '16px', textAlign: 'center', borderTop: '1px solid var(--color-border)' }}>
+                <button
+                  onClick={handleLoadMore}
+                  className="btn"
+                  style={{ background: 'var(--color-primary)', color: 'white', padding: '8px 24px' }}
+                >
+                  Load More ({Math.round((fullContent?.length || 0) / 1024)}KB total)
+                </button>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

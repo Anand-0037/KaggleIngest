@@ -1,390 +1,211 @@
 """
 Kaggle API Service - handles all Kaggle API interactions.
-Thread-safe credential handling with client caching.
 """
-
 import json
 import os
-import shutil
-import threading
 
-from typing import Any
-
+import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from core.exceptions import KaggleIngestionError, MetadataError, NotebookDownloadError
-from core.models import CompetitionMetadata, DatasetMetadata, NotebookMeta
-from logger import get_logger
+from backend.core.exceptions import KaggleIngestionError, MetadataError, NotebookDownloadError
+from backend.core.models import CompetitionMetadata, DatasetMetadata, NotebookMeta
+from backend.config import KAGGLE_USERNAME, KAGGLE_KEY
+from backend.logger import get_logger
+
+# ... imports ...
+import threading
+from kaggle.api.kaggle_api_extended import KaggleApi
 
 logger = get_logger(__name__)
 
-
 # =============================================================================
 # SDK PATCH: Fix Kaggle SDK 1.8.x User-Agent=None bug
-# This patch fixes a bug in kagglesdk 1.8.0-1.8.2 where User-Agent is set to None.
-# Can be removed once Kaggle releases a fix (check kagglesdk >= 1.8.3).
 # =============================================================================
 def _patch_kaggle_sdk():
     """Patch kagglesdk to fix User-Agent=None bug."""
     try:
         from kagglesdk.kaggle_http_client import KaggleHttpClient
-
         _original_init = KaggleHttpClient.__init__
-
         def _patched_init(self, *args, **kwargs):
             kwargs.pop('user_agent', None)
             _original_init(self, *args, **kwargs)
             self._user_agent = "kaggle-api/1.8.2"
-
         KaggleHttpClient.__init__ = _patched_init
         logger.debug("Patched kagglesdk.KaggleHttpClient for User-Agent fix")
-
     except ImportError:
-        pass  # kagglesdk not available
+        pass
     except Exception as e:
         logger.warning(f"Failed to patch kagglesdk: {e}")
 
-
-# Apply patch on module load
 _patch_kaggle_sdk()
-
 
 class KaggleService:
     """
     Singleton service for Kaggle API interactions.
-    Handles authentication, client lifecycle, and raw API calls.
-    Thread-safe credential handling with per-credential caching.
+    Handles authentication and client lifecycle.
     """
     _instance = None
-    _client_cache: dict[str, Any] = {}
-    _env_lock = threading.Lock()
+    _lock = threading.Lock()
+    _client = None
+    _api_semaphore = threading.Semaphore(5)  # Limit concurrent Kaggle API calls to 5
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(KaggleService, cls).__new__(cls)
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(KaggleService, cls).__new__(cls)
         return cls._instance
 
-    def _get_cache_key(self, creds: dict | None) -> str:
-        """Generate cache key for client based on credentials."""
-        if not creds:
-            return "default"
-        return json.dumps(dict(sorted(creds.items())))
-
-    def get_client(self, kaggle_creds: dict[str, str] | None = None) -> Any:
+    def get_client(self, creds: dict[str, str] | None = None):
         """
-        Get or create a Kaggle API client.
-        Thread-safe with double-check locking.
-        Credentials are restored immediately after authenticate().
+        Get Kaggle API client.
+        If 'creds' is provided, returns a NEW client instance (thread-safe).
+        If 'creds' is None, returns the cached global client (initialized from env).
         """
-        # Fallback to KAGGLE_CONFIG_JSON if no credentials provided
-        if not kaggle_creds:
-            config_json = os.environ.get("KAGGLE_CONFIG_JSON")
-            if config_json:
-                try:
-                    kaggle_creds = json.loads(config_json)
-                    logger.debug("Using credentials from KAGGLE_CONFIG_JSON env var")
-                except Exception as e:
-                    logger.warning(f"Failed to parse KAGGLE_CONFIG_JSON: {e}")
-
-        cache_key = self._get_cache_key(kaggle_creds)
-
-        # Fast path: cached client (no lock needed)
-        if cache_key in self._client_cache:
-            return self._client_cache[cache_key]
-
-        with self._env_lock:
-            # Double-check inside lock
-            if cache_key in self._client_cache:
-                return self._client_cache[cache_key]
-
+        if creds:
             try:
-                from kaggle.api.kaggle_api_extended import KaggleApi
+                # Create temporary client (not cached) for specific credentials
+                client = KaggleApi()
 
-                # Store and set credentials atomically
-                original_env = {
-                    "KAGGLE_USERNAME": os.environ.get("KAGGLE_USERNAME"),
-                    "KAGGLE_KEY": os.environ.get("KAGGLE_KEY")
-                }
+                # Attempt to inject credentials if supported by SDK wrapper
+                if hasattr(client, 'credentials'):
+                    client.credentials = creds
 
-                try:
-                    if kaggle_creds:
-                        os.environ["KAGGLE_USERNAME"] = kaggle_creds["username"]
-                        os.environ["KAGGLE_KEY"] = kaggle_creds["key"]
-
-                    api = KaggleApi()
-                    api.authenticate()  # Reads credentials into memory
-
-                finally:
-                    # Restore immediately after authenticate
-                    for key, val in original_env.items():
-                        if val is not None:
-                            os.environ[key] = val
-                        elif key in os.environ and kaggle_creds:
-                            del os.environ[key]
-
-                self._client_cache[cache_key] = api
-                return api
-
+                client.authenticate()
+                return client
             except Exception as e:
-                logger.error(f"Failed to authenticate with Kaggle: {e}")
-                raise KaggleIngestionError(f"Authentication failed: {str(e)}")
+                 logger.error(f"Failed to create custom client: {e}")
+                 raise
 
-    _kaggle_cli_path: str | None = None
+        # Singleton Logic
+        if self._client:
+            return self._client
 
-    @property
-    def kaggle_cli_path(self) -> str:
-        """Get absolute path to kaggle CLI. Instance-level caching."""
-        if KaggleService._kaggle_cli_path is None:
-            KaggleService._kaggle_cli_path = self._resolve_kaggle_cli_path()
-        return KaggleService._kaggle_cli_path
+        with self._lock:
+            if self._client:
+                return self._client
 
-    @staticmethod
-    def _resolve_kaggle_cli_path() -> str:
-        """Resolve CLI path - called once per process lifecycle."""
-        import sys
-        venv_bin = os.path.dirname(sys.executable)
-        kaggle_path = os.path.join(venv_bin, "kaggle")
-        if os.path.exists(kaggle_path):
-            logger.info(f"Using kaggle CLI at: {kaggle_path}")
-            return kaggle_path
+            # Initialize global client
+            self._client = KaggleApi()
+            self._client.authenticate()
+            return self._client
 
-        # Fallback to system path
-        path = shutil.which("kaggle")
-        if path:
-            logger.info(f"Using system kaggle CLI at: {path}")
-            return path
 
-        # Last resort
-        logger.warning("Kaggle CLI not found in venv or system PATH, using 'kaggle'")
-        return "kaggle"
+    async def download_notebook_sdk(self, ref: str, dest_path: str, creds: dict | None = None):
+        """Download notebook asynchronously using Kaggle SDK in a thread."""
+        await asyncio.to_thread(self.download_notebook, ref, dest_path, creds)
 
-    async def _run_command_async(self, cmd: list[str], timeout: int = 300) -> str:
-        """Run a command asynchronously using asyncio subprocess."""
-        import asyncio
-
-        # Use absolute path for kaggle command
-        if cmd and cmd[0] == "kaggle":
-             cmd[0] = self.kaggle_cli_path
-
-        cmd_str = self._sanitize_cmd(cmd)
-        logger.debug(f"Async Executing: {cmd_str}")
-
-        try:
-            # Create subprocess
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env={**os.environ, **(self._get_env_vars(self.current_creds) if hasattr(self, 'current_creds') else {})}
-            )
-
-            try:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-            except TimeoutError:
-                process.kill()
-                raise KaggleIngestionError(f"Command timed out after {timeout}s: {cmd_str}")
-
-            if process.returncode != 0:
-                error_msg = stderr.decode().strip()
-                logger.error(f"Command failed ({process.returncode}): {error_msg}")
-                raise KaggleIngestionError(f"Command failed: {error_msg}")
-
-            return stdout.decode().strip()
-
-        except FileNotFoundError:
-            raise KaggleIngestionError("Kaggle CLI not found. Is it installed?")
-        except Exception as e:
-            logger.error(f"Async execution error: {e}")
-            raise KaggleIngestionError(f"Execution failed: {str(e)}")
-
-    def _get_env_vars(self, creds: dict | None) -> dict[str, str]:
-        """Get environment variables for credentials."""
-        if not creds:
-            return {}
-        return {
-            "KAGGLE_USERNAME": creds["username"],
-            "KAGGLE_KEY": creds["key"]
-        }
-
-    async def list_notebooks_async(
-        self,
-        resource_type: str,
-        identifier: str,
-        top_n: int = 10,
-        language: str | None = None,
-        creds: dict | None = None
-    ) -> list[NotebookMeta]:
-        """List notebooks asynchronously using Kaggle CLI."""
-        # Save creds for _run_command_async context if needed, or pass explicitly
-        # For thread/async safety, we pass env vars directly in creates_subprocess
-
-        # CLI: kaggle kernels list --competition [comp] --sort-by voteCount --page-size [n] --csv
-        cmd = [self.kaggle_cli_path, "kernels", "list", "--csv", "--sort-by", "voteCount", "--page-size", str(top_n)]
-
-        if resource_type == "competition":
-            cmd.extend(["--competition", identifier])
-        else:
-            cmd.extend(["--dataset", identifier])
-
-        if language:
-            cmd.extend(["--language", language])
-
-        # Temporarily set env vars for the subprocess call
-        # We need to construct the env manually for the subprocess
-        env_vars = self._get_env_vars(creds)
-
-        # Helper to run with specific env
-        async def run_with_env():
-             import asyncio
-             process = await asyncio.create_subprocess_exec(
-                 *cmd,
-                 stdout=asyncio.subprocess.PIPE,
-                 stderr=asyncio.subprocess.PIPE,
-                 env={**os.environ, **env_vars}
-             )
-             stdout, stderr = await process.communicate()
-             if process.returncode != 0:
-                 raise KaggleIngestionError(f"CLI List failed: {stderr.decode()}")
-             return stdout.decode()
-
-        try:
-            output = await run_with_env()
-            # Parse CSV output
-            import csv
-            import io
-            notebooks = []
-            reader = csv.DictReader(io.StringIO(output))
-            for row in reader:
-                try:
-                    # ref is usually "owner/slug" in CSV
-                    ref = row.get("ref")
-                    if not ref: continue
-
-                    notebooks.append(NotebookMeta(
-                        ref=ref,
-                        title=row.get("title", ""),
-                        author=row.get("author", ""),
-                        upvotes=int(row.get("totalVotes", 0)),
-                        url=f"https://www.kaggle.com/{ref}",
-                        last_updated=row.get("lastRunTime"),
-                        # 'kernelType' isn't always in CSV view, but good if present
-                        kernel_type=row.get("kernelType")
-                    ))
-                except Exception as e:
-                    logger.warning(f"Failed to parse notebook row: {e}")
-
-            return notebooks[:top_n]
-
-        except Exception as e:
-            logger.warning(f"Async list failed: {e}. Falling back to sync SDK.")
-            # Fallback to sync method (will block formatted in asyncio.to_thread if we wanted,
-            # but for now just call it - caller should handle blocking)
-            import asyncio
-            return await asyncio.to_thread(
-                self.list_notebooks, resource_type, identifier, top_n, language, creds
-            )
-
-    async def download_notebook_async(self, ref: str, dest_path: str, creds: dict | None = None):
-        """Download notebook asynchronously using Kaggle CLI."""
-        cmd = [self.kaggle_cli_path, "kernels", "pull", ref, "--path", dest_path, "--metadata"]
-
-        env_vars = self._get_env_vars(creds)
-
-        try:
-            import asyncio
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env={**os.environ, **env_vars}
-            )
-            stdout, stderr = await process.communicate()
-            if process.returncode != 0:
-                raise NotebookDownloadError(f"Async download failed: {stderr.decode()}")
-
-        except Exception as e:
-             logger.error(f"Async download failed for {ref}: {e}")
-             raise NotebookDownloadError(f"Failed to download {ref}: {e}")
-
-    # Keep synchronous methods for backward compatibility or fallbacks
-    def list_notebooks(
-        self,
-        resource_type: str,
-        identifier: str,
-        top_n: int = 10,
-        language: str | None = None,
-        creds: dict | None = None
-    ) -> list[NotebookMeta]:
-        """List notebooks synchronously using Kaggle SDK."""
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    def download_notebook(self, ref: str, dest_path: str, creds: dict | None = None):
+        """Download notebook using Kaggle SDK (Sync) with retry."""
         api = self.get_client(creds)
+        try:
+            # kernels_pull downloads files to path
+            # metadata=True downloads kernel-metadata.json
+            with self._api_semaphore:
+                api.kernels_pull(ref, path=dest_path, metadata=True, quiet=True)
+        except Exception as e:
+            logger.error(f"Sync download failed for {ref}: {e}")
+            raise NotebookDownloadError(f"Failed to download {ref}: {e}")
 
+
+    def list_notebooks(self, resource_type: str, identifier: str, top_n: int = 10, language: str | None = None, creds: dict | None = None) -> list[NotebookMeta]:
+        """List notebooks synchronously using Kaggle SDK (Legacy Fallback)."""
+        api = self.get_client(creds)
         search = identifier
-        sort_by = 'voteCount'
+        kwargs = {'page_size': top_n, 'sort_by': 'voteCount', 'search': None}
+        if resource_type == 'competition':
+            kwargs['competition'] = identifier
+        else:
+            kwargs['dataset'] = identifier
+        if language:
+            kwargs['language'] = language
 
         try:
-            # Note: SDK methods differ slightly by resource type if using lower-level API,
-            # but kernels_list is generic.
-            # api.kernels_list(page=1, page_size=20, search=..., competition=..., dataset=...)
-
-            kwargs = {
-                'page_size': top_n,
-                'sort_by': sort_by,
-                'search': None # Identifier passed via competition/dataset param
-            }
-
-            if resource_type == 'competition':
-                kwargs['competition'] = identifier
-            else:
-                kwargs['dataset'] = identifier
-
-            if language:
-                kwargs['language'] = language
-
-            kernels = api.kernels_list(**kwargs)
-
+            with self._api_semaphore:
+                kernels = api.kernels_list(**kwargs)
             notebooks = []
             for kernel in kernels:
+                # Handle lastRunTime/lastUpdated differences across SDK versions
+                last_updated = (
+                    getattr(kernel, 'lastRunTime', None) or
+                    getattr(kernel, 'lastUpdated', None) or
+                    ''
+                )
+                # Ensure totalVotes is int (some SDK versions return string)
+                upvotes = getattr(kernel, 'totalVotes', 0)
+                try:
+                    upvotes = int(upvotes) if upvotes else 0
+                except (ValueError, TypeError):
+                    upvotes = 0
+
                 notebooks.append(NotebookMeta(
                     ref=kernel.ref,
                     title=kernel.title,
                     author=kernel.author,
-                    upvotes=getattr(kernel, 'totalVotes', 0),
-                    url=f"https://www.kaggle.com/{kernel.ref}"
+                    upvotes=upvotes,
+                    url=f"https://www.kaggle.com/{kernel.ref}",
+                    last_updated=str(last_updated) if last_updated else None
                 ))
-
             return notebooks
-
         except Exception as e:
             logger.error(f"Sync list notebooks failed: {e}")
             raise KaggleIngestionError(f"Failed to list notebooks: {e}")
 
-
-
-
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def download_file(self, resource_type: str, identifier: str, filename: str, dest_path: str, creds: dict | None = None):
-        """Download a specific file from a dataset or competition."""
+        """Download a specific file (Sync)."""
         api = self.get_client(creds)
         try:
-            if resource_type == "competition":
-                api.competition_download_file(identifier, filename, path=dest_path, quiet=True)
-            else:
-                api.dataset_download_file(identifier, filename, path=dest_path, quiet=True)
+            with self._api_semaphore:
+                if resource_type == "competition":
+                    api.competition_download_file(identifier, filename, path=dest_path, quiet=True)
+                else:
+                    api.dataset_download_file(identifier, filename, path=dest_path, quiet=True)
         except Exception as e:
              raise KaggleIngestionError(f"Failed to download file {filename}: {e}")
 
+    def _extract_slug(self, identifier: str) -> str:
+        """Extract slug from Kaggle URL if provided."""
+        if 'kaggle.com/' in identifier:
+            # Handle URLs like https://www.kaggle.com/competitions/titanic
+            # or https://www.kaggle.com/datasets/user/slug
+            parts = identifier.split('kaggle.com/')[-1].split('/')
+            if len(parts) >= 2:
+                # competitions/titanic -> titanic
+                # datasets/user/slug -> user/slug
+                if parts[0] == 'competitions':
+                    return parts[1].split('?')[0]
+                if parts[0] in ('datasets', 'code'):
+                    return '/'.join(parts[1:3]).split('?')[0]
+        return identifier.split('?')[0].strip('/')
+
     def get_competition_metadata(self, identifier: str, creds: dict | None = None) -> CompetitionMetadata:
-        """Fetch competition metadata."""
         api = self.get_client(creds)
+        slug = self._extract_slug(identifier)
         try:
-            comps = api.competitions_list(search=identifier)
-            # Handle SDK response object wrapping the list (ApiListCompetitionsResponse)
+            with self._api_semaphore:
+                comps = api.competitions_list(search=slug)
             if hasattr(comps, 'competitions'):
                 comps = comps.competitions
-
-            # Find exact match
             for comp in comps:
-                if getattr(comp, 'ref', '') == identifier or getattr(comp, 'url', '').endswith(identifier):
+                if getattr(comp, 'ref', '') == slug or getattr(comp, 'url', '').endswith(slug):
+                    # Fetch leaderboard (top 10)
+                    leaderboard = []
+                    try:
+                        with self._api_semaphore:
+                            lb_data = api.competition_leaderboard_view(identifier)
+                        if hasattr(lb_data, 'submissions'):
+                            lb_data = lb_data.submissions
+                        for i, entry in enumerate(lb_data[:10]):
+                            leaderboard.append({
+                                "rank": i + 1,
+                                "team": getattr(entry, 'teamName', 'Unknown'),
+                                "score": getattr(entry, 'score', 'N/A')
+                            })
+                    except Exception as lb_err:
+                        logger.warning(f"Could not fetch leaderboard for {identifier}: {lb_err}")
+
                     return CompetitionMetadata(
                         title=comp.title,
                         url=comp.url,
@@ -392,20 +213,25 @@ class KaggleService:
                         category=getattr(comp, 'category', ''),
                         prize=getattr(comp, 'reward', 'N/A'),
                         evaluation=getattr(comp, 'evaluationMetric', ''),
-                        dates=str(getattr(comp, 'deadline', ''))
+                        dates=str(getattr(comp, 'deadline', '')),
+                        enabled_date=str(getattr(comp, 'enabledDate', '')),
+                        max_team_size=getattr(comp, 'maxTeamSize', 0) or 0,
+                        max_daily_submissions=getattr(comp, 'maxDailySubmissions', 0) or 0,
+                        team_count=getattr(comp, 'teamCount', 0) or 0,
+                        leaderboard=leaderboard
                     )
             raise MetadataError(f"Competition {identifier} not found")
         except Exception as e:
             raise MetadataError(f"Failed to fetch competition metadata: {e}")
 
     def get_dataset_metadata(self, identifier: str, creds: dict | None = None) -> DatasetMetadata:
-        """Fetch dataset metadata."""
         api = self.get_client(creds)
+        slug = self._extract_slug(identifier)
         try:
-            datasets = api.dataset_list(search=identifier)
+            with self._api_semaphore:
+                datasets = api.dataset_list(search=slug)
             for ds in datasets:
-                if ds.ref == identifier:
-                    # Use getattr with fallback - SDK uses different attribute names
+                if ds.ref == slug:
                     last_updated = getattr(ds, 'lastUpdated', None) or getattr(ds, 'lastRunTime', '') or ''
                     return DatasetMetadata(
                         title=ds.title,
@@ -418,21 +244,18 @@ class KaggleService:
             raise MetadataError(f"Failed to fetch dataset metadata: {e}")
 
     def list_files(self, resource_type: str, identifier: str, creds: dict | None = None) -> list[str]:
-        """List CSV files in the resource."""
         api = self.get_client(creds)
         files = []
         try:
-            if resource_type == "competition":
-                result = api.competition_list_files(identifier)
-                # Handle both direct list and object with .files attribute
-                file_objects = getattr(result, 'files', result) if result else []
-            else:
-                result = api.dataset_list_files(identifier)
-                file_objects = getattr(result, 'files', result) if result else []
+            with self._api_semaphore:
+                if resource_type == "competition":
+                    result = api.competition_list_files(identifier)
+                    file_objects = getattr(result, 'files', result) if result else []
+                else:
+                    result = api.dataset_list_files(identifier)
+                    file_objects = getattr(result, 'files', result) if result else []
 
-            # Handle None or empty result
-            if not file_objects:
-                return []
+            if not file_objects: return []
 
             for f in file_objects:
                 name = str(f) if isinstance(f, str) else getattr(f, 'name', str(f))
@@ -442,4 +265,3 @@ class KaggleService:
         except Exception as e:
             logger.warning(f"Failed to list files: {e}")
             return []
-

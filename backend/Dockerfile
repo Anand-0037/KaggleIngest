@@ -1,51 +1,43 @@
-# Build stage
-FROM python:3.13-slim-bookworm AS builder
+# Stage 1: Build dependencies
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-# Set working directory
-WORKDIR /app
-
-# Copy dependency definition and lockfile
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies into a virtual environment
-RUN uv venv /opt/venv && \
-  uv sync --frozen --no-dev
-
-# Runtime stage
-FROM python:3.13-slim-bookworm
-
-# Install curl for health checks
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-  rm -rf /var/lib/apt/lists/*
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Copy virtual environment
-COPY --from=builder /opt/venv /opt/venv
+# Install dependencies first for caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=backend/pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=backend/uv.lock,target=uv.lock \
+    uv sync --frozen --no-install-project --no-dev
 
-# Make sure we use the virtualenv
-ENV PATH="/opt/venv/bin:$PATH"
+# Stage 2: Final image
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+# Copy the virtual environment from the builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Set environment variables
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH="/app:$PYTHONPATH"
 
 # Copy application code
-COPY . .
+COPY backend/ /app/backend/
 
 # Create non-root user for security
-RUN useradd -m appuser && \
-  mkdir -p /app/outputs && \
-  chown -R appuser:appuser /app
+RUN groupadd -r kaggle && useradd -r -g kaggle kaggle && \
+    chown -R kaggle:kaggle /app
+USER kaggle
 
-USER appuser
-
-# Expose port (FastAPI default or configurable)
+# Expose port
 EXPOSE 8000
 
-# Health check (use PORT env var if set)
+# Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+  CMD curl -f http://localhost:8000/health || exit 1
 
-# Entrypoint - use explicit path since shell form has issues with PATH
-CMD /opt/venv/bin/uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
-
+# Start the application
+CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
