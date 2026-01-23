@@ -6,6 +6,11 @@ from contextlib import asynccontextmanager
 import logging
 import time
 import asyncpg
+import sys
+import os
+
+# Add parent directory to sys.path to allow 'backend' imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.core.database import Database
 from backend.core.logging_config import setup_logging

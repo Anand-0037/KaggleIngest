@@ -3,7 +3,7 @@ name = "kaggleingest"
 version = "5.0.0"
 description = "Kaggle Notebook Ingestion Tool - Downloads and merges top Kaggle notebooks into context files"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "fastapi>=0.116.2",
     "kaggle==1.8.2",
