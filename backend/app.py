@@ -164,9 +164,11 @@ async def search_competitions(
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # LEGACY ROUTES (For backwards compatibility with stale Vercel frontend)
 # ------------------------------------------------------------------------------
 from fastapi import BackgroundTasks, UploadFile, File, Form
+from backend.api.competitions import CompetitionResponse, fetch_and_cache_competition, IngestRequest
 @app.post("/get-context", response_model=CompetitionResponse, tags=["Legacy"])
 async def legacy_get_context(
     request: IngestRequest,
@@ -194,7 +196,7 @@ async def legacy_get_context_upload(
 # ------------------------------------------------------------------------------
 
 
-from backend.api.competitions import CompetitionResponse, fetch_and_cache_competition, IngestRequest
+
 
 @app.post("/api/get-context", response_model=CompetitionResponse)
 async def get_context(
