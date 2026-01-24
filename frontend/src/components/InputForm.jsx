@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './InputForm.module.css';
 
 function InputForm({ onSubmit, isLoading, initialUrl }) {
@@ -13,6 +13,50 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
       return [];
     }
   });
+
+  const [showDetails, setShowDetails] = useState(false);
+  const [placeholder, setPlaceholder] = useState('');
+
+  // Smart Placeholder Animation
+  useEffect(() => {
+    const examples = [
+      'kaggle.com/c/titanic...',
+      'kaggle.com/competitions/house-prices...',
+      'kaggle.com/code/alexisbcook/titanic-tutorial...'
+    ];
+    let currentIdx = 0;
+    let charIdx = 0;
+    let isDeleting = false;
+    let timeoutId;
+
+    const type = () => {
+      const currentText = examples[currentIdx];
+      if (isDeleting) {
+        setPlaceholder(currentText.substring(0, charIdx - 1));
+        charIdx--;
+      } else {
+        setPlaceholder(currentText.substring(0, charIdx + 1));
+        charIdx++;
+      }
+
+      let speed = 50; // Typing speed (faster)
+      if (isDeleting) speed = 30; // Deleting speed
+
+      if (!isDeleting && charIdx === currentText.length) {
+        speed = 2000; // Pause at end
+        isDeleting = true;
+      } else if (isDeleting && charIdx === 0) {
+        isDeleting = false;
+        currentIdx = (currentIdx + 1) % examples.length;
+        speed = 500; // Pause before next word
+      }
+
+      timeoutId = setTimeout(type, speed);
+    };
+
+    timeoutId = setTimeout(type, 500);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [tokenFile, setTokenFile] = useState(null);
@@ -106,7 +150,7 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
       </h1>
 
       <p className={styles.heroSubtitle}>
-        Bridge the gap between Kaggle's vast data and your favorite AI coding assistant. KaggleIngest transforms complex competition metadata into a single, token-optimized context file.
+        One-click context for <strong>GPT-5.2</strong>, <strong>Claude 4.5</strong>, and <strong>Gemini 3.0</strong>.
       </p>
 
       <div className={styles.card}>
@@ -114,7 +158,7 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
           <div className={styles.inputWrapper}>
             <input
               type="text"
-              placeholder="Paste Kaggle URL (Competition or Dataset)..."
+              placeholder={placeholder || "Paste Kaggle URL..."}
               value={url}
               onChange={(e) => { setUrl(e.target.value); setError(''); }}
               disabled={isLoading}
@@ -225,9 +269,9 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
           <div className={styles.featuresCard}>
             <p className={styles.sectionTitle}>Capabilities</p>
             <ul className={styles.featureList}>
-              <li>Feed context to ChatGPT/Claude</li>
-              <li>Learn from top notebooks</li>
-              <li>Jumpstart your submission</li>
+              <li>Token-Optimized Context</li>
+              <li>Gold-Medal Patterns</li>
+              <li>Instant Feature Engineering</li>
             </ul>
             <div className={styles.toonBox}>
               <span className={styles.toonLabel}>LLM Optimized</span> — <a href="https://github.com/toon-format/toon" target="_blank" rel="noopener noreferrer" className={styles.toonLink}>TOON</a> saves tokens
@@ -238,32 +282,58 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
 
       {/* SEO Content Section */}
       <section className={styles.seoContent}>
-        <h2 className={styles.sectionHeader}>How KaggleIngest Works</h2>
-        <div className={styles.contentGrid}>
-          <div className={styles.contentCard}>
-            <h3>1. Intelligent Ingestion</h3>
-            <p>
-              Paste any Kaggle URL — whether it's a <strong>competition</strong>, a <strong>dataset</strong>, or a <strong>notebook (kernel)</strong>. Our backend identifies the resource and prepares to crawl the most relevant metadata, including overview descriptions, evaluation metrics, and discussion themes.
-            </p>
-          </div>
-          <div className={styles.contentCard}>
-            <h3>2. Top Notebook Analysis</h3>
-            <p>
-              Don't just look at the data; learn from the best. KaggleIngest can analyze the top performing notebooks for any competition. It extracts high-level code patterns, preprocessing steps, and model architectures, giving your AI assistant the deep insight it needs to generate winning code.
-            </p>
-          </div>
-          <div className={styles.contentCard}>
-            <h3>3. TOON Format Optimization</h3>
-            <p>
-              Context is expensive. Large datasets can easily overflow an LLM's context window. We use the <strong>TOON (Token Optimized Object Notation)</strong> format to drastically reduce token usage without losing critical information. This ensures you can fit more historical context and structural metadata into every prompt.
-            </p>
-          </div>
-        </div>
+        {!showDetails ? (
+           <div style={{ textAlign: 'center', marginTop: '2rem', paddingBottom: '2rem' }}>
+             <button
+               type="button"
+               onClick={() => setShowDetails(true)}
+               className={styles.fileToggle}
+               style={{ fontSize: '14px', color: 'var(--color-text-secondary)', cursor: 'pointer', background: 'none', border: 'none' }}
+             >
+               Learn how it works ↓
+             </button>
+           </div>
+        ) : (
+          <div className={styles.detailsFadeIn}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <button
+                type="button"
+                onClick={() => setShowDetails(false)}
+                className={styles.fileToggle}
+                style={{ fontSize: '14px', color: 'var(--color-text-secondary)', cursor: 'pointer', background: 'none', border: 'none' }}
+                >
+                Close details ↑
+                </button>
+            </div>
 
-        <h2 className={styles.sectionHeader}>Why use LLM Context for Kaggle?</h2>
-        <p className={styles.longText}>
-          Traditional coding assistants struggle with the specific constraints and hidden details of Kaggle competitions. By providing a curated <strong>LLM context</strong>, you allow models like GPT-5.2, Claude 4.5, or Gemini 3.0 to understand the competition's unique evaluation metric, the underlying data structure, and the community's best practices. This leads to fewer hallucinations, better feature engineering suggestions, and a significantly faster iteration cycle. Whether you are aiming for a Gold medal or just getting started with a new dataset, KaggleIngest is your shortcut to professional-grade machine learning workflows.
-        </p>
+            <h2 className={styles.sectionHeader}>How It Works</h2>
+            <div className={styles.contentGrid}>
+            <div className={styles.contentCard}>
+                <h3>1. Paste URL</h3>
+                <p>
+                Supports Competitions, Datasets, and Notebooks. We automatically detect and crawl the relevant metadata.
+                </p>
+            </div>
+            <div className={styles.contentCard}>
+                <h3>2. We Analyze</h3>
+                <p>
+                Our engine scans top-scoring notebooks to extract winning architectures and preprocessing steps.
+                </p>
+            </div>
+            <div className={styles.contentCard}>
+                <h3>3. You Generate</h3>
+                <p>
+                Get a TOON-formatted prompt that saves 60% tokens. Paste it into your LLM and start coding.
+                </p>
+            </div>
+            </div>
+
+            <h2 className={styles.sectionHeader}>Why It Matters</h2>
+            <p className={styles.longText}>
+            Coding assistants hallucinate without context. KaggleIngest gives them the full picture—metrics, schemas, and best practices—so you get working, high-quality code instantly.
+            </p>
+          </div>
+        )}
       </section>
     </div>
   );

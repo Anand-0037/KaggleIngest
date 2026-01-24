@@ -114,6 +114,11 @@ async def get_competition_metadata(
             except Exception as e:
                 logger.error(f"Error merging notebooks for {slug}: {e}")
                 # Fallback to original toon_content if merging fails
+        else:
+            # Legacy Cache Support: If 'notebooks' is missing, we can't slice dynamically.
+            # Trigger a background update to fix the cache structure.
+            logger.warning(f"⚠️ Legacy cache detected for {slug} (missing raw notebooks). Returning fallback and triggering update.")
+            background_tasks.add_task(fetch_and_cache_competition, slug, None, None)
 
         return CompetitionResponse(
             slug=cached['slug'],
