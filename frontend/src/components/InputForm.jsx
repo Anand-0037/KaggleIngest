@@ -150,7 +150,7 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
       </h1>
 
       <p className={styles.heroSubtitle}>
-        One-click context for <strong>GPT-5.2</strong>, <strong>Claude 4.5</strong>, and <strong>Gemini 3.0</strong>.
+        Win Kaggle Competitions Faster. Give your LLMs proper context about Kaggle competitions.
       </p>
 
       <div className={styles.card}>
