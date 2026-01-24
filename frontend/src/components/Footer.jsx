@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className={styles.footer}>
       <div className={styles.divider}></div>
-      <p className={styles.copyright} style={{textAlign: 'center', color: 'var(--color-text-dim)', fontSize: '0.8rem', margin: '1rem 0'}}>&copy; 2026 KaggleIngest v1.1</p>
+      <p className={styles.copyright} style={{textAlign: 'center', color: 'var(--color-text-dim)', fontSize: '0.8rem', margin: '1rem 0'}}>&copy; 2026 KaggleIngest v1.2</p>
         <div className={styles.socialLinks}>
           <a
             href="https://github.com/Anand-0037"
@@ -32,7 +32,7 @@ const Footer = () => {
             className={styles.socialLink}
             title="Join Discord"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 18.13V22"></path><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="12" r="3"></circle><path d="M6 15h12"></path></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12h6m-6 4h6m2 5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path></svg>
           </a>
         </div>
     </footer>
