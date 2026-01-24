@@ -28,7 +28,7 @@ function IngestApp() { // Main content within Provider
 
       // Poll if processing
       if (res.success && res.status === 'processing') {
-        const MAX_RETRIES = 30; // 30 * 2s = 60s max wait
+        const MAX_RETRIES = 150; // 150 * 2s = 300s (5 minutes) max wait
         let retries = 0;
 
         while (res.success && res.status === 'processing' && retries < MAX_RETRIES) {

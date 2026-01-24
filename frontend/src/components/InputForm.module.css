@@ -20,9 +20,9 @@
   --radius-lg: 16px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 10px 25px rgba(0,0,0,0.12);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 .heroSection {
@@ -240,7 +240,7 @@
 .fileInputWrapper {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
@@ -355,6 +355,7 @@
   padding: 24px;
   border-radius: var(--radius-md);
   transition: transform 0.2s;
+  will-change: transform;
 }
 
 .contentCard:hover {
