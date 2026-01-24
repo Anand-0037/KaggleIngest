@@ -262,7 +262,7 @@ function InputForm({ onSubmit, isLoading, initialUrl }) {
 
         <h2 className={styles.sectionHeader}>Why use LLM Context for Kaggle?</h2>
         <p className={styles.longText}>
-          Traditional coding assistants struggle with the specific constraints and hidden details of Kaggle competitions. By providing a curated <strong>LLM context</strong>, you allow models like GPT-4, Claude 3.5, or Gemini 1.5 Pro to understand the competition's unique evaluation metric, the underlying data structure, and the community's best practices. This leads to fewer hallucinations, better feature engineering suggestions, and a significantly faster iteration cycle. Whether you are aiming for a Gold medal or just getting started with a new dataset, KaggleIngest is your shortcut to professional-grade machine learning workflows.
+          Traditional coding assistants struggle with the specific constraints and hidden details of Kaggle competitions. By providing a curated <strong>LLM context</strong>, you allow models like GPT-5.2, Claude 4.5, or Gemini 3.0 to understand the competition's unique evaluation metric, the underlying data structure, and the community's best practices. This leads to fewer hallucinations, better feature engineering suggestions, and a significantly faster iteration cycle. Whether you are aiming for a Gold medal or just getting started with a new dataset, KaggleIngest is your shortcut to professional-grade machine learning workflows.
         </p>
       </section>
     </div>
