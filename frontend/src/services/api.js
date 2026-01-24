@@ -14,7 +14,7 @@ export async function ingestContext(payload) {
 
     if (competitionSlug && !payload.token_file) {
       // Use the new competition endpoint
-      response = await fetch(`${API_BASE}/api/competitions/${competitionSlug}`, {
+      response = await fetch(`${API_BASE}/api/competitions/${competitionSlug}?top_n=${payload.top_n || 3}`, {
         method: 'GET',
       });
     } else if (payload.token_file) {
