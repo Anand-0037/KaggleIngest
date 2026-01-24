@@ -140,7 +140,7 @@ DATABASE_URL = POSTGRES_URL  # Alias for backward compatibility
 
 # Resource-specific TTLs (Seconds) - 30 days for monthly refresh
 TTL_NOTEBOOK = 259200      # 3 days (notebooks can change more frequently)
-TTL_COMPETITION = 2592000  # 30 days
+TTL_COMPETITION = 259200   # 3 days (reduced from 30 days per user request)
 TTL_DATASET = 2592000      # 30 days
 
 # Data Quality: Default Ignore Patterns
