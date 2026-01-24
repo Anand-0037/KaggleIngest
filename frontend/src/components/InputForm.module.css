@@ -386,6 +386,14 @@
   text-align: center;
 }
 
+.seoContent {
+  margin-top: 80px;
+  padding-top: 60px;
+  border-top: 1px solid var(--color-border);
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .heroSection {
